@@ -1,0 +1,13 @@
+Metadata-Version: 2.1
+Name: ecdata
+Version: 1.0.0
+Summary: a pip installable package to distribute the Executive Communications Dataset
+Home-page: https://github.com/joshuafayallen/executivecommunications-py
+Author: Joshua Allen
+Author-email: joshua.f.allen@gmail.com
+License: CC-0
+Keywords: Datasets
+Requires-Python: >= 3.12
+License-File: LICENSE.txt
+Requires-Dist: polars==1.8.2
+Requires-Dist: requests==2.32.3
