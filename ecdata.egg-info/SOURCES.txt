@@ -1,0 +1,8 @@
+LICENSE.txt
+setup.py
+ecdata/__init__.py
+ecdata.egg-info/PKG-INFO
+ecdata.egg-info/SOURCES.txt
+ecdata.egg-info/dependency_links.txt
+ecdata.egg-info/requires.txt
+ecdata.egg-info/top_level.txt
