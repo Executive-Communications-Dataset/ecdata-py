@@ -1,5 +1,7 @@
 name = 'ecdata'
 
+# so you don't forget the equivalent of devtools::build is python setup.py sdist
+
 import polars as pl
 import requests 
 
@@ -31,16 +33,31 @@ def country_dictionary():
     return pl.DataFrame(data)
 
 # we are 
-def link_builder(country, ecd_version = '1.0.0'):
+def link_builder(country=None, language=None, ecd_version='1.0.0'):
     if isinstance(country, str):
         country = [country]
+    
+    if isinstance(language, str):
+        language = [language]
 
+    country = [c.lower() for c in country] if country else None
+    language = language.lower() if language else None
+    
+    
     country_names = country_dictionary()
     
-    country_names = country_names.filter(pl.col('name_in_dataset').is_in(country))
-
-    country_names = country_names.with_columns(url = 'https://github.com/joshuafayallen/executivestatements/releases/download/' + f'{ecd_version}' + '/' + pl.col('file_name') + '.parquet')
-
+    if country:
+        country_names = country_names.filter(pl.col('name_in_dataset').str.lower().is_in(country))
+    elif language:
+        country_names = country_names.filter(pl.col('language').str.lower().is_in(language))
+    
+    
+    country_names = country_names.with_columns(
+        url='https://github.com/joshuafayallen/executivestatements/releases/download/' + 
+            f'{ecd_version}' + '/' + pl.col('file_name') + '.parquet'
+    )
+    
+    
     country_names = country_names['url']
     return country_names
 
@@ -103,39 +120,63 @@ def get_ecd_release(repo='joshuafayallen/executivestatements', token=None, verbo
     return out
 
 
-def validate_input(country=None, full_ecd=False, version='1.0.0'):
+def validate_input(country=None,language = None  , full_ecd=False, version='1.0.0'):
     
     release = get_ecd_release()
 
    
-    countries_df = country_dictionary()
+    countries_df = country_dictionary().with_columns(
+        (pl.col('name_in_dataset').str.to_lowercase().alias('name_in_dataset')),
+        (pl.col('language').str.to_lowercase().alias('language'))
+    )
 
    
     valid_countries = countries_df['name_in_dataset'].to_list()
+
+    valid_languages = countries_df['language'].to_list()
 
    
     if country is not None and not isinstance(country, (str, list, dict)):
         country_type = type(country)
         raise ValueError(f'Please provide a str, list, or dict to country. You provided {country_type}')
+    
+    if language is not None and not isinstance(country, (str, list, dict)):
+        country_type = type(country)
+        raise ValueError(f'Please provide a str, list, or dict to country. You provided {country_type}')
 
     
-    if country is None and not full_ecd:
-        raise ValueError('Please provide a country name or set full_ecd to True')
+    if country is None and not full_ecd and language is None:
+        raise ValueError('Please provide a country name, language or set full_ecd to True')
 
 
     if version not in release:
         raise ValueError(f'{version} is not a valid version. Set ecd_version to one of {release}')
     
    
+    if language is not None:
+        if isinstance(language, str):
+            language_lower = language.lower()
+            if language_lower not in valid_languages:
+                raise ValueError(f'{language} is not a valid language name in our dataset. Call country_dictionary for a list of valid inputs')
+        elif isinstance(language, list):
+            invalid_languages = [c for c in language if c.lower() not in language]
+            if invalid_languages:
+                raise ValueError(f'These countries are not valid: {invalid_languages}. Call country_dictionary for a list of valid inputs')
+        elif isinstance(language, dict):
+            invalid_langauges = [c for c in language.keys() if c.lower() not in valid_languages]
+            if invalid_languages:
+                raise ValueError(f'These keys in your dictionary are not valid language names: {invalid_languages}. Call country_dictionary for a list of valid inputs')
     if country is not None:
-        if isinstance(country, str) and country not in valid_countries:
-            raise ValueError(f'{country} is not a valid country name in our dataset. Call country_dictionary for a list of valid inputs')
+        if isinstance(country, str):
+            country_lower = country.lower()
+            if country_lower not in valid_countries:
+                raise ValueError(f'{country} is not a valid country name in our dataset. Call country_dictionary for a list of valid inputs')
         elif isinstance(country, list):
-            invalid_countries = [c for c in country if c not in valid_countries]
+            invalid_countries = [c for c in country if c.lower() not in valid_countries]
             if invalid_countries:
                 raise ValueError(f'These countries are not valid: {invalid_countries}. Call country_dictionary for a list of valid inputs')
         elif isinstance(country, dict):
-            invalid_countries = [c for c in country.keys() if c not in valid_countries]
+            invalid_countries = [c for c in country.keys() if c.lower() not in valid_countries]
             if invalid_countries:
                 raise ValueError(f'These keys in your dictionary are not valid country names: {invalid_countries}. Call country_dictionary for a list of valid inputs')
 
