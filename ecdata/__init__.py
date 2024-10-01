@@ -28,7 +28,7 @@ def country_dictionary():
     data = {
           'name_in_dataset': ["Argentina","Australia","Austria","Azerbaijan","Bolivia","Brazil","Canada","Chile","Colombia","Costa Rica","Czechia","Denmark","Ecuador","France","Georgia","Germany","Greece","Hong Kong","Hungary","Iceland","India", "India","Indonesia","Israel","Italy","Jamaica","Japan","Mexico","New Zealand","Nigeria","Norway","Philippines","Poland","Portugal","Republic of South Korea","Russia","Spain","Turkey","United Kingdom","United States of America","Uruguay","Venzuela"],
           'file_name': ["argentina","australia","austria","azerbaijan","bolivia","brazil","canada","chile","colombia","costa_rica","czechia","denmark","ecuador","france","georgia","germany","greece","hong_kong","hungary","iceland","india",'india' ,"indonesia","israel","italy","jamaica","japan","mexico","new_zealand","nigeria","norway","philippines","poland","portugal","republic_of_south_korea","russia","spain","turkey","united_kingdom","united_states_of_america","uruguay","venzuela"],
-          'language': ['Spanish', 'English', 'German', 'English', 'Spanish', 'Portugese', 'English', 'Spanish', 'Spanish', 'Spanish', 'Czech', 'Danish', 'Spanish', 'French', 'Georgian', 'German', 'Greek', 'Chineses', 'Hungarian', 'Icelandic', 'Hindi', 'English', 'Hebrew', 'Italian', 'English', 'Japanese', 'Spanish', 'English', 'English', 'Norwegian', 'Filipino', 'Polish', 'Portugese', 'Korean', 'English', 'Spanish', 'Turkish', 'English', 'English', 'Spanish', 'Spanish']
+          'language': ['Spanish', 'English', 'German', 'English', 'Spanish', 'Portugese', 'English', 'Spanish', 'Spanish', 'Spanish', 'Czech', 'Danish', 'Spanish', 'French', 'Georgian', 'German', 'Greek', 'Chineses', 'Hungarian', 'Icelandic', 'Hindi', 'English', 'Indonesian' ,'Hebrew', 'Italian', 'English', 'Japanese', 'Spanish', 'English', 'English', 'Norwegian', 'Filipino', 'Polish', 'Portugese', 'Korean', 'English', 'Spanish', 'Turkish', 'English', 'English', 'Spanish', 'Spanish']
     }
     return pl.DataFrame(data)
 
@@ -41,15 +41,18 @@ def link_builder(country=None, language=None, ecd_version='1.0.0'):
         language = [language]
 
     country = [c.lower() for c in country] if country else None
-    language = language.lower() if language else None
+    language = [l.lower() for l in language] if language else None
     
     
-    country_names = country_dictionary()
+    country_names = country_dictionary().with_columns(
+        (pl.col('name_in_dataset').str.to_lowercase().alias('name_in_dataset')),
+        (pl.col('language').str.to_lowercase().alias('language'))
+    )
     
     if country:
-        country_names = country_names.filter(pl.col('name_in_dataset').str.lower().is_in(country))
+        country_names = country_names.filter(pl.col('name_in_dataset').is_in(country))
     elif language:
-        country_names = country_names.filter(pl.col('language').str.lower().is_in(language))
+        country_names = country_names.filter(pl.col('language').is_in(language))
     
     
     country_names = country_names.with_columns(
@@ -120,7 +123,7 @@ def get_ecd_release(repo='joshuafayallen/executivestatements', token=None, verbo
     return out
 
 
-def validate_input(country=None,language = None  , full_ecd=False, version='1.0.0'):
+def validate_input(country=None,language=None , full_ecd=False, version='1.0.0'):
     
     release = get_ecd_release()
 
@@ -140,7 +143,7 @@ def validate_input(country=None,language = None  , full_ecd=False, version='1.0.
         country_type = type(country)
         raise ValueError(f'Please provide a str, list, or dict to country. You provided {country_type}')
     
-    if language is not None and not isinstance(country, (str, list, dict)):
+    if language is not None and not isinstance(language, (str, list, dict)):
         country_type = type(country)
         raise ValueError(f'Please provide a str, list, or dict to country. You provided {country_type}')
 
@@ -184,17 +187,18 @@ def validate_input(country=None,language = None  , full_ecd=False, version='1.0.
 
 
 
-def load_ecd(country = None, full_ecd = False, ecd_version = '1.0.0'):
+def load_ecd(country = None,language = None, full_ecd = False, ecd_version = '1.0.0'):
 
     """
     Args:
     country: (List[str], dict{'country1', 'country2'}, str): name of a country in our dataset. For a full list of countries do country_dictionary()
+    language: (List[str], dict{'language1', 'language2'}, str): name of a language in our dataset. For a full list of languages do country_dictionary()
     full_ecd: (Bool): when True downloads the full Executive Communications Dataset
     ecd_version: (str): a valid version of the Executive Communications Dataset. 
     """
 
 
-    validate_input(country = country, full_ecd=full_ecd, version=ecd_version)
+    validate_input(country = country,language= language, full_ecd=full_ecd, version=ecd_version)
 
     if country is None and full_ecd is True:
 
@@ -211,6 +215,18 @@ def load_ecd(country = None, full_ecd = False, ecd_version = '1.0.0'):
     elif country is not None and full_ecd is False and len(country) > 1:
 
         urls = link_builder(country = country, ecd_version=ecd_version)
+
+        ecd_data = pl.concat([pl.read_parquet(i) for i in urls], how = 'vertical')
+    
+    elif country is None and full_ecd is False and language is not None:
+
+        urls = link_builder(language = language, ecd_version=ecd_version)
+
+        ecd_data = pl.concat([pl.read_parquet(i) for i in urls], how = 'vertical')
+
+    elif country is not None and full_ecd is False and language is not None:
+
+        urls = link_builder(country = country, language= language, ecd_version=ecd_version)
 
         ecd_data = pl.concat([pl.read_parquet(i) for i in urls], how = 'vertical')
 

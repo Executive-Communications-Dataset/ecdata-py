@@ -1,4 +1,5 @@
 LICENSE.txt
+README.md
 setup.py
 ecdata/__init__.py
 ecdata.egg-info/PKG-INFO
