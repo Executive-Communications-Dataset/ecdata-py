@@ -16,14 +16,14 @@ class TestYourFunctions(unittest.TestCase):
 
     def test_link_builder_single_country(self):
         url = link_builder("Argentina", ecd_version='1.0.0')
-        expected_url = "https://github.com/joshuafayallen/executivestatements/releases/download/1.0.0/argentina.parquet"
+        expected_url = "https://github.com/Executive-Communications-Dataset/ecdata/releases/download/1.0.0/argentina.parquet"
         self.assertEqual(url[0], expected_url)
 
     def test_link_builder_multiple_countries(self):
         urls = link_builder(["Argentina", "Brazil"], ecd_version='1.0.0')
         expected_urls = [
-            "https://github.com/joshuafayallen/executivestatements/releases/download/1.0.0/argentina.parquet",
-            "https://github.com/joshuafayallen/executivestatements/releases/download/1.0.0/brazil.parquet"
+            "https://github.com/Executive-Communications-Dataset/ecdata/releases/download/1.0.0/argentina.parquet",
+            "https://github.com/Executive-Communications-Dataset/ecdata/releases/download/1.0.0/brazil.parquet"
         ]
         self.assertEqual(len(urls), 2)
         self.assertIn(expected_urls[0], urls)
@@ -38,7 +38,7 @@ class TestYourFunctions(unittest.TestCase):
             {"name": "Release 2", "id": 2, "body": "Second release", "tag_name": "0.0.2", "draft": False, "created_at": "2021-01-02", "published_at": "2021-01-02", "html_url": "https://example.com"}
         ]
 
-        releases = get_ecd_release(repo='joshuafayallen/executivestatements')
+        releases = get_ecd_release(repo='Executive-Communications-Dataset/ecdata')
         self.assertEqual(len(releases), 2)
         self.assertIn("Release 1", releases)
         self.assertIn("Release 2", releases)
