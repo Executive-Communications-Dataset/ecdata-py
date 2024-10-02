@@ -4,6 +4,10 @@ name = 'ecdata'
 
 import polars as pl
 import requests 
+import os
+import subprocess
+from pathlib import Path
+import warnings
 
 __doc__ = """
 
@@ -17,6 +21,7 @@ Functions
 
 country_dictionary - Returns a Polars dataframe of countries in the dataset
 load_ecd - Main function for loading in dataset 
+example_scrapper- Opens 
 
 
 """
@@ -32,7 +37,7 @@ def country_dictionary():
     }
     return pl.DataFrame(data)
 
-# we are 
+
 def link_builder(country=None, language=None, ecd_version='1.0.0'):
     if isinstance(country, str):
         country = [country]
@@ -233,3 +238,34 @@ def load_ecd(country = None,language = None, full_ecd = False, ecd_version = '1.
     return ecd_data
 
 
+
+def example_scrapper(scrapper_type= 'static'):
+
+    """
+    Args:
+    scrapper_type: Str: specify static or dynamic. Note right now the static scrapper is written in R.  
+    """
+    scrapper_type = scrapper_type.lower()
+    
+    
+    scrappers_dir = Path('scrappers')
+    
+    if scrapper_type == 'static':
+        file_path = scrappers_dir / 'static-scrapper.R'
+        warnings.warn("Note this scrapper is written in R. If somebody wants to translate this into Python we welcome pull requests.")
+    elif scrapper_type == 'dynamic':
+        file_path = scrappers_dir / 'dynamic-scrapper.py'
+    else:
+        raise ValueError("Invalid scrapper_type. Must be 'static' or 'dynamic'.")
+    
+    
+    if not file_path.exists():
+        raise FileNotFoundError(f"{file_path} does not exist.")
+    
+    
+    if os.name == 'posix':  
+        subprocess.run(['open', file_path])
+    elif os.name == 'nt':  
+        os.startfile(file_path)
+    else:
+        raise OSError("Unsupported OS")
