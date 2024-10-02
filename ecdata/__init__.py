@@ -56,7 +56,7 @@ def link_builder(country=None, language=None, ecd_version='1.0.0'):
     
     
     country_names = country_names.with_columns(
-        url='https://github.com/joshuafayallen/executivestatements/releases/download/' + 
+        url='https://github.com/Executive-Communications-Dataset/ecdata/releases/download/' + 
             f'{ecd_version}' + '/' + pl.col('file_name') + '.parquet'
     )
     
@@ -68,7 +68,7 @@ def link_builder(country=None, language=None, ecd_version='1.0.0'):
 
 
 
-def get_ecd_release(repo='joshuafayallen/executivestatements', token=None, verbose=True):
+def get_ecd_release(repo='Executive-Communications-Dataset/ecdata', token=None, verbose=True):
    
     owner, repo_name = repo.split('/')
     
@@ -202,7 +202,7 @@ def load_ecd(country = None,language = None, full_ecd = False, ecd_version = '1.
 
     if country is None and full_ecd is True:
 
-        url = f'https://github.com/joshuafayallen/executivestatements/releases/download/{ecd_version}/full_ecd.parquet'
+        url = f'https://github.com/Executive-Communications-Dataset/ecdata/releases/download/{ecd_version}/full_ecd.parquet'
 
         ecd_data = pl.read_parquet(url)
 
