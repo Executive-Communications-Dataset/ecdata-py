@@ -14,7 +14,7 @@ __doc__ = """
 ecdata - A Python package for working with The Executive Communications Dataset 
 
 =========================================================
-**ecdata** is a Pythong package that streamlines importing The Executive Communications Dataset
+**ecdata** is a Python package that streamlines importing The Executive Communications Dataset
 
 Functions
 ---------
