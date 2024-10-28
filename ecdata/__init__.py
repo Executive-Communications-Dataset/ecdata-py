@@ -40,7 +40,7 @@ def country_dictionary():
         "philippines", "poland", "portugal", "russia", "spain", "turkey",
         "united_kingdom", "uruguay", "venezuela", "united_states_of_america",
         "republic_of_korea"
-    ] * [2, 4, 2, 4, 2, 4, 2, 6, 2, 4][0:10],
+    ], 
     
     "language": [
         "Spanish", "English", "German", "English", "Spanish", "Portugese", "English",
@@ -49,7 +49,7 @@ def country_dictionary():
         "Indonesian", "Hebrew", "Italian", "English", "Japanese", "Spanish",
         "English", "Norwegian", "Filipino", "Polish", "Portugese", "English",
         "Spanish", "Turkish", "English", "Spanish", "English", "Korean"
-    ] * [2, 4, 2, 6, 2, 4, 2, 4, 2, 4, 2, 6, 4][0:13],
+    ],
 
     "abbr": [
         "ARG", "AR", "AUS", "AU", "AUT", "AT", "AZE", "AZ", "AZE", "AZ", "BOL", "BO",
