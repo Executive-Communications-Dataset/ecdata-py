@@ -29,62 +29,85 @@ example_scrapper- Opens
 
 
 
+import polars as pl
+
 def country_dictionary():
     
-country_names = pl.DataFrame({
+    country_names =  {
     "file_name": [
-        "argentina", "australia", "austria", "azerbaijan", "bolivia", "brazil",
-        "canada", "chile", "colombia", "costa_rica", "czechia", "denmark",
-        "dominican_republic", "ecuador", "france", "georgia", "germany", "greece",
-        "hong_kong", "hungary", "iceland", "india", "indonesia", "israel", "italy",
-        "jamaica", "japan", "mexico", "new_zealand", "nigeria", "norway",
-        "philippines", "poland", "portugal", "russia", "spain", "turkey",
-        "united_kingdom", "uruguay", "venezuela", "united_states_of_america",
-        "republic_of_korea"
-    ] * [2, 4, 2, 4, 2, 4, 2, 6, 2, 4][0:10],
-    
-    "language": [
-        "Spanish", "English", "German", "English", "Spanish", "Portugese", "English",
-        "Spanish", "Czech", "Danish", "Spanish", "French", "Georgian", "German",
-        "Greek", "Chinese", "Hungarian", "Icelandic", "English", "Hindi",
-        "Indonesian", "Hebrew", "Italian", "English", "Japanese", "Spanish",
-        "English", "Norwegian", "Filipino", "Polish", "Portugese", "English",
-        "Spanish", "Turkish", "English", "Spanish", "English", "Korean"
-    ] * [2, 4, 2, 6, 2, 4, 2, 4, 2, 4, 2, 6, 4][0:13],
-
-    "abbr": [
-        "ARG", "AR", "AUS", "AU", "AUT", "AT", "AZE", "AZ", "AZE", "AZ", "BOL", "BO",
-        "BRA", "BR", "CAN", "CA", "CHL", "CL", "COL", "CO", "CRI", "CR", "CZE", "CZ",
-        "DNK", "DK", "DOM", "DO", "ECU", "EC", "FRA", "FR", "GEO", "GE", "DEU", "DE",
-        "GRC", "GR", "HKG", "HK", "HUN", "HU", "ISL", "IS", "IND", "IN", "IND", "IN",
-        "IDN", "ID", "ISR", "IL", "ITA", "IT", "JAM", "JM", "JPN", "JP", "MEX", "MX",
-        "NZL", "NZ", "NGA", "NG", "NOR", "NO", "PHL", "PH", "POL", "PL", "PRT", "PT",
-        "RUS", "RU", "RUS", "RU", "ESP", "ES", "TUR", "TR", "GBR", "GBR", "GB", "GB",
-        "UK", "UK", "URY", "UY", "VEN", "VE", "USA", "USA", "US", "US", "KOR", "KOR",
-        "KR", "KR"
+        "argentina", "argentina", "australia", "australia", "austria", "austria",
+        "azerbaijan", "azerbaijan", "azerbaijan", "azerbaijan", "bolivia", "bolivia",
+        "brazil", "brazil", "canada", "canada", "chile", "chile", "colombia", "colombia",
+        "costa_rica", "costa_rica", "czechia", "czechia", "denmark", "denmark",
+        "dominican_republic", "dominican_republic", "ecuador", "ecuador", "france",
+        "france", "georgia", "georgia", "germany", "germany", "greece", "greece",
+        "hong_kong", "hong_kong", "hungary", "hungary", "iceland", "iceland",
+        "india", "india", "india", "india", "indonesia", "indonesia", "israel", "israel",
+        "italy", "italy", "jamaica", "jamaica", "japan", "japan", "mexico", "mexico",
+        "new_zealand", "new_zealand", "nigeria", "nigeria", "norway", "norway",
+        "philippines", "philippines", "poland", "poland", "portugal", "portugal",
+        "russia", "russia", "russia", "russia", "spain", "spain", "turkey", "turkey",
+        "united_kingdom", "united_kingdom", "united_kingdom", "united_kingdom",
+        "united_kingdom", "united_kingdom", "uruguay", "uruguay", "venezuela", "venezuela",
+        "united_states_of_america", "united_states_of_america", "united_states_of_america",
+        "united_states_of_america", "republic_of_korea", "republic_of_korea",
+        "republic_of_korea", "republic_of_korea"
     ],
-
+    "language": [
+        "Spanish", "Spanish", "English", "English", "German", "German",
+        "English", "English", "English", "English", "Spanish", "Spanish",
+        "Portuguese", "Portuguese", "English", "English", "Spanish", "Spanish",
+        "Spanish", "Spanish", "Spanish", "Spanish", "Czech", "Czech",
+        "Danish", "Danish", "Spanish", "Spanish", "Spanish", "Spanish",
+        "French", "French", "Georgian", "Georgian", "German", "German",
+        "Greek", "Greek", "Chinese", "Chinese", "Hungarian", "Hungarian",
+        "Icelandic", "Icelandic", "English", "English", "Hindi", "Hindi",
+        "Indonesian", "Indonesian", "Hebrew", "Hebrew", "Italian", "Italian",
+        "English", "English", "Japanese", "Japanese", "Spanish", "Spanish",
+        "English", "English", "English", "English", "Norwegian", "Norwegian",
+        "Filipino", "Filipino", "Polish", "Polish", "Portuguese", "Portuguese",
+        "English", "English", "English", "English", "Spanish", "Spanish",
+        "Turkish", "Turkish", "English", "English", "English", "English",
+        "English", "English", "Spanish", "Spanish", "Spanish", "Spanish",
+        "English", "English", "English", "English", "Korean", "Korean",
+        "Korean", "Korean"
+    ],
+    "abbr": [
+        "ARG", "AR", "AUS", "AU", "AUT", "AT", "AZE", "AZ", "AZE", "AZ", 
+        "BOL", "BO", "BRA", "BR", "CAN", "CA", "CHL", "CL", "COL", "CO", 
+        "CRI", "CR", "CZE", "CZ", "DNK", "DK", "DOM", "DO", "ECU", "EC", 
+        "FRA", "FR", "GEO", "GE", "DEU", "DE", "GRC", "GR", "HKG", "HK", 
+        "HUN", "HU", "ISL", "IS", "IND", "IN", "IND", "IN", "IDN", "ID", 
+        "ISR", "IL", "ITA", "IT", "JAM", "JM", "JPN", "JP", "MEX", "MX", 
+        "NZL", "NZ", "NGA", "NG", "NOR", "NO", "PHL", "PH", "POL", "PL", 
+        "PRT", "PT", "RUS", "RU", "RUS", "RU", "ESP", "ES", "TUR", "TR", 
+        "GBR", "GBR", "GB", "GB", "UK", "UK", "URY", "UY", "VEN", "VE", 
+        "USA", "USA", "US", "US", "KOR", "KOR", "KR", "KR"
+    ],
     "name_in_dataset": [
         "Argentina", "Argentina", "Australia", "Australia", "Austria", "Austria",
-        "Azerbaijan", "Azerbaijan", "Azerbaijan", "Azerbaijan", "Bolivia", "Bolivia",
-        "Brazil", "Brazil", "Canada", "Canada", "Chile", "Chile", "Colombia",
-        "Colombia", "Costa Rica", "Costa Rica", "Czechia", "Czechia", "Denmark",
-        "Denmark", "Dominican Republic", "Dominican Republic", "Ecuador", "Ecuador",
-        "France", "France", "Georgia", "Georgia", "Germany", "Germany", "Greece",
-        "Greece", "Hong Kong", "Hong Kong", "Hungary", "Hungary", "Iceland",
-        "Iceland", "India", "India", "India", "India", "Indonesia", "Indonesia",
-        "Israel", "Israel", "Italy", "Italy", "Jamaica", "Jamaica", "Japan", "Japan",
-        "Mexico", "Mexico", "New Zealand", "New Zealand", "Nigeria", "Nigeria",
-        "Norway", "Norway", "Philippines", "Philippines", "Poland", "Poland",
-        "Portugal", "Portugal", "Russia", "Russia", "Russia", "Russia", "Spain",
-        "Spain", "Turkey", "Turkey", "United Kingdom", "Great Britain",
-        "United Kingdom", "Great Britain", "United Kingdom", "Great Britain",
-        "Uruguay", "Uruguay", "Venezuela", "Venezuela", "United States of America",
-        "United States", "United States of America", "United States",
+        "Azerbaijan", "Azerbaijan", "Azerbaijan", "Azerbaijan", "Bolivia", 
+        "Bolivia", "Brazil", "Brazil", "Canada", "Canada", "Chile", "Chile", 
+        "Colombia", "Colombia", "Costa Rica", "Costa Rica", "Czechia", 
+        "Czechia", "Denmark", "Denmark", "Dominican Republic", "Dominican Republic", 
+        "Ecuador", "Ecuador", "France", "France", "Georgia", "Georgia", 
+        "Germany", "Germany", "Greece", "Greece", "Hong Kong", "Hong Kong", 
+        "Hungary", "Hungary", "Iceland", "Iceland", "India", "India", 
+        "India", "India", "Indonesia", "Indonesia", "Israel", "Israel", 
+        "Italy", "Italy", "Jamaica", "Jamaica", "Japan", "Japan", "Mexico", 
+        "Mexico", "New Zealand", "New Zealand", "Nigeria", "Nigeria", 
+        "Norway", "Norway", "Philippines", "Philippines", "Poland", "Poland", 
+        "Portugal", "Portugal", "Russia", "Russia", "Russia", "Russia", 
+        "Spain", "Spain", "Turkey", "Turkey", "United Kingdom", "Great Britain", 
+        "United Kingdom", "Great Britain", "United Kingdom", "Great Britain", 
+        "Uruguay", "Uruguay", "Venezuela", "Venezuela", "United States of America", 
+        "United States", "United States of America", "United States", 
         "Republic of Korea", "South Korea", "Republic of Korea", "South Korea"
     ]
-})
-    return country_names
+}
+   
+    return pl.DataFrame(country_names)
+
 
 
 def link_builder(country=None, language=None, ecd_version='1.0.0'):
