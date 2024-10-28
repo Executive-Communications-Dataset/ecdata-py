@@ -30,12 +30,60 @@ example_scrapper- Opens
 
 
 def country_dictionary():
-    data = {
-          'name_in_dataset': ["Argentina","Australia","Austria","Azerbaijan","Bolivia","Brazil","Canada","Chile","Colombia","Costa Rica","Czechia","Denmark","Ecuador","France","Georgia","Germany","Greece","Hong Kong","Hungary","Iceland","India", "India","Indonesia","Israel","Italy","Jamaica","Japan","Mexico","New Zealand","Nigeria","Norway","Philippines","Poland","Portugal","Republic of Korea","Russia","Spain","Turkey","United Kingdom","United States of America","Uruguay","Venezuela"],
-          'file_name': ["argentina","australia","austria","azerbaijan","bolivia","brazil","canada","chile","colombia","costa_rica","czechia","denmark","ecuador","france","georgia","germany","greece","hong_kong","hungary","iceland","india",'india' ,"indonesia","israel","italy","jamaica","japan","mexico","new_zealand","nigeria","norway","philippines","poland","portugal","republic_of_korea","russia","spain","turkey","united_kingdom","united_states_of_america","uruguay","venezuela"],
-          'language': ['Spanish', 'English', 'German', 'English', 'Spanish', 'Portugese', 'English', 'Spanish', 'Spanish', 'Spanish', 'Czech', 'Danish', 'Spanish', 'French', 'Georgian', 'German', 'Greek', 'Chineses', 'Hungarian', 'Icelandic', 'Hindi', 'English', 'Indonesian' ,'Hebrew', 'Italian', 'English', 'Japanese', 'Spanish', 'English', 'English', 'Norwegian', 'Filipino', 'Polish', 'Portugese', 'Korean', 'English', 'Spanish', 'Turkish', 'English', 'English', 'Spanish', 'Spanish']
-    }
-    return pl.DataFrame(data)
+    country_names = {
+    "file_name": [
+        "argentina", "australia", "austria", "azerbaijan", "bolivia", "brazil",
+        "canada", "chile", "colombia", "costa_rica", "czechia", "denmark",
+        "dominican_republic", "ecuador", "france", "georgia", "germany", "greece",
+        "hong_kong", "hungary", "iceland", "india", "indonesia", "israel", "italy",
+        "jamaica", "japan", "mexico", "new_zealand", "nigeria", "norway",
+        "philippines", "poland", "portugal", "russia", "spain", "turkey",
+        "united_kingdom", "uruguay", "venezuela", "united_states_of_america",
+        "republic_of_korea"
+    ] * [2, 4, 2, 4, 2, 4, 2, 6, 2, 4][0:10],
+    
+    "language": [
+        "Spanish", "English", "German", "English", "Spanish", "Portugese", "English",
+        "Spanish", "Czech", "Danish", "Spanish", "French", "Georgian", "German",
+        "Greek", "Chinese", "Hungarian", "Icelandic", "English", "Hindi",
+        "Indonesian", "Hebrew", "Italian", "English", "Japanese", "Spanish",
+        "English", "Norwegian", "Filipino", "Polish", "Portugese", "English",
+        "Spanish", "Turkish", "English", "Spanish", "English", "Korean"
+    ] * [2, 4, 2, 6, 2, 4, 2, 4, 2, 4, 2, 6, 4][0:13],
+
+    "abbr": [
+        "ARG", "AR", "AUS", "AU", "AUT", "AT", "AZE", "AZ", "AZE", "AZ", "BOL", "BO",
+        "BRA", "BR", "CAN", "CA", "CHL", "CL", "COL", "CO", "CRI", "CR", "CZE", "CZ",
+        "DNK", "DK", "DOM", "DO", "ECU", "EC", "FRA", "FR", "GEO", "GE", "DEU", "DE",
+        "GRC", "GR", "HKG", "HK", "HUN", "HU", "ISL", "IS", "IND", "IN", "IND", "IN",
+        "IDN", "ID", "ISR", "IL", "ITA", "IT", "JAM", "JM", "JPN", "JP", "MEX", "MX",
+        "NZL", "NZ", "NGA", "NG", "NOR", "NO", "PHL", "PH", "POL", "PL", "PRT", "PT",
+        "RUS", "RU", "RUS", "RU", "ESP", "ES", "TUR", "TR", "GBR", "GBR", "GB", "GB",
+        "UK", "UK", "URY", "UY", "VEN", "VE", "USA", "USA", "US", "US", "KOR", "KOR",
+        "KR", "KR"
+    ],
+
+    "name_in_dataset": [
+        "Argentina", "Argentina", "Australia", "Australia", "Austria", "Austria",
+        "Azerbaijan", "Azerbaijan", "Azerbaijan", "Azerbaijan", "Bolivia", "Bolivia",
+        "Brazil", "Brazil", "Canada", "Canada", "Chile", "Chile", "Colombia",
+        "Colombia", "Costa Rica", "Costa Rica", "Czechia", "Czechia", "Denmark",
+        "Denmark", "Dominican Republic", "Dominican Republic", "Ecuador", "Ecuador",
+        "France", "France", "Georgia", "Georgia", "Germany", "Germany", "Greece",
+        "Greece", "Hong Kong", "Hong Kong", "Hungary", "Hungary", "Iceland",
+        "Iceland", "India", "India", "India", "India", "Indonesia", "Indonesia",
+        "Israel", "Israel", "Italy", "Italy", "Jamaica", "Jamaica", "Japan", "Japan",
+        "Mexico", "Mexico", "New Zealand", "New Zealand", "Nigeria", "Nigeria",
+        "Norway", "Norway", "Philippines", "Philippines", "Poland", "Poland",
+        "Portugal", "Portugal", "Russia", "Russia", "Russia", "Russia", "Spain",
+        "Spain", "Turkey", "Turkey", "United Kingdom", "Great Britain",
+        "United Kingdom", "Great Britain", "United Kingdom", "Great Britain",
+        "Uruguay", "Uruguay", "Venezuela", "Venezuela", "United States of America",
+        "United States", "United States of America", "United States",
+        "Republic of Korea", "South Korea", "Republic of Korea", "South Korea"
+    ]
+}
+    return pl.DataFrame(country_names)
 
 
 def link_builder(country=None, language=None, ecd_version='1.0.0'):
@@ -55,7 +103,7 @@ def link_builder(country=None, language=None, ecd_version='1.0.0'):
     )
     
     if country:
-        country_names = country_names.filter(pl.col('name_in_dataset').is_in(country))
+        country_names = country_names.filter((pl.col('name_in_dataset').is_in(country)) | (pl.col('abbr').is_in(country)))
     elif language:
         country_names = country_names.filter(pl.col('language').is_in(language))
     
@@ -135,13 +183,16 @@ def validate_input(country=None,language=None , full_ecd=False, version='1.0.0')
    
     countries_df = country_dictionary().with_columns(
         (pl.col('name_in_dataset').str.to_lowercase().alias('name_in_dataset')),
-        (pl.col('language').str.to_lowercase().alias('language'))
+        (pl.col('language').str.to_lowercase().alias('language')),
+        (pl.col('abbr').str_to_lowercase().alias('abbr'))
     )
 
    
     valid_countries = countries_df['name_in_dataset'].to_list()
 
     valid_languages = countries_df['language'].to_list()
+
+    valid_abbr = countries_df['abbr'].to_list()
 
    
     if country is not None and not isinstance(country, (str, list, dict)):
@@ -177,14 +228,14 @@ def validate_input(country=None,language=None , full_ecd=False, version='1.0.0')
     if country is not None:
         if isinstance(country, str):
             country_lower = country.lower()
-            if country_lower not in valid_countries:
+            if country_lower not in valid_countries and country_lower not in valid_abbr :
                 raise ValueError(f'{country} is not a valid country name in our dataset. Call country_dictionary for a list of valid inputs')
         elif isinstance(country, list):
-            invalid_countries = [c for c in country if c.lower() not in valid_countries]
+            invalid_countries = [cty for cty in country if cty.lower() not in valid_countries and cty.lower() not in valid_abbr ]
             if invalid_countries:
                 raise ValueError(f'These countries are not valid: {invalid_countries}. Call country_dictionary for a list of valid inputs')
         elif isinstance(country, dict):
-            invalid_countries = [c for c in country.keys() if c.lower() not in valid_countries]
+            invalid_countries = [cty for cty in country.keys() if cty.lower() not in valid_countries and cty.lower() not in valid_abbr]
             if invalid_countries:
                 raise ValueError(f'These keys in your dictionary are not valid country names: {invalid_countries}. Call country_dictionary for a list of valid inputs')
 
