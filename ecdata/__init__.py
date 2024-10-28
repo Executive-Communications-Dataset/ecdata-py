@@ -137,6 +137,7 @@ def link_builder(country=None, language=None, ecd_version='1.0.0'):
             f'{ecd_version}' + '/' + pl.col('file_name') + '.parquet'
     )
     
+    country_names = country_names.unique(subset= 'url')
     
     country_names = country_names['url']
     return country_names
