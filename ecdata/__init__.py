@@ -32,7 +32,7 @@ example_scrapper- Opens
 import polars as pl
 
 def country_dictionary():
-    
+
     country_names =  {
     "file_name": [
         "argentina", "argentina", "australia", "australia", "austria", "austria",
@@ -208,7 +208,7 @@ def validate_input(country=None,language=None , full_ecd=False, version='1.0.0')
     countries_df = country_dictionary().with_columns(
         (pl.col('name_in_dataset').str.to_lowercase().alias('name_in_dataset')),
         (pl.col('language').str.to_lowercase().alias('language')),
-        (pl.col('abbr').str_to_lowercase().alias('abbr'))
+        (pl.col('abbr').str.to_lowercase().alias('abbr'))
     )
 
    
