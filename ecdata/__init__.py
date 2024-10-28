@@ -30,7 +30,8 @@ example_scrapper- Opens
 
 
 def country_dictionary():
-    country_names = {
+    
+country_names = pl.DataFrame({
     "file_name": [
         "argentina", "australia", "austria", "azerbaijan", "bolivia", "brazil",
         "canada", "chile", "colombia", "costa_rica", "czechia", "denmark",
@@ -40,7 +41,7 @@ def country_dictionary():
         "philippines", "poland", "portugal", "russia", "spain", "turkey",
         "united_kingdom", "uruguay", "venezuela", "united_states_of_america",
         "republic_of_korea"
-    ], 
+    ] * [2, 4, 2, 4, 2, 4, 2, 6, 2, 4][0:10],
     
     "language": [
         "Spanish", "English", "German", "English", "Spanish", "Portugese", "English",
@@ -49,7 +50,7 @@ def country_dictionary():
         "Indonesian", "Hebrew", "Italian", "English", "Japanese", "Spanish",
         "English", "Norwegian", "Filipino", "Polish", "Portugese", "English",
         "Spanish", "Turkish", "English", "Spanish", "English", "Korean"
-    ],
+    ] * [2, 4, 2, 6, 2, 4, 2, 4, 2, 4, 2, 6, 4][0:13],
 
     "abbr": [
         "ARG", "AR", "AUS", "AU", "AUT", "AT", "AZE", "AZ", "AZE", "AZ", "BOL", "BO",
@@ -82,8 +83,8 @@ def country_dictionary():
         "United States", "United States of America", "United States",
         "Republic of Korea", "South Korea", "Republic of Korea", "South Korea"
     ]
-}
-    return pl.DataFrame(country_names)
+})
+    return country_names
 
 
 def link_builder(country=None, language=None, ecd_version='1.0.0'):
