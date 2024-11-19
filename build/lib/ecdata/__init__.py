@@ -1,8 +1,6 @@
 name = 'ecdata'
 
 # so you don't forget the equivalent of devtools::build is python setup.py sdist
-# equivalent of submit_cran() is twine upload dist/*
-
 
 import polars as pl
 import requests 
@@ -35,7 +33,78 @@ import polars as pl
 
 def country_dictionary():
 
-    country_names =  [{"file_name":"argentina","language":"Spanish","abbr":"ARG","name_in_dataset":"Argentina"},{"file_name":"argentina","language":"Spanish","abbr":"AR","name_in_dataset":"Argentina"},{"file_name":"australia","language":"English","abbr":"AUS","name_in_dataset":"Australia"},{"file_name":"australia","language":"English","abbr":"AU","name_in_dataset":"Australia"},{"file_name":"austria","language":"German","abbr":"AUT","name_in_dataset":"Austria"},{"file_name":"austria","language":"German","abbr":"AT","name_in_dataset":"Austria"},{"file_name":"azerbaijan","language":"English","abbr":"AZE","name_in_dataset":"Azerbaijan"},{"file_name":"azerbaijan","language":"English","abbr":"AZ","name_in_dataset":"Azerbaijan"},{"file_name":"azerbaijan","language":"English","abbr":"AZE","name_in_dataset":"Azerbaijan"},{"file_name":"azerbaijan","language":"English","abbr":"AZ","name_in_dataset":"Azerbaijan"},{"file_name":"bolivia","language":"Spanish","abbr":"BOL","name_in_dataset":"Bolivia"},{"file_name":"bolivia","language":"Spanish","abbr":"BO","name_in_dataset":"Bolivia"},{"file_name":"brazil","language":"Portugese","abbr":"BRA","name_in_dataset":"Brazil"},{"file_name":"brazil","language":"Portugese","abbr":"BR","name_in_dataset":"Brazil"},{"file_name":"canada","language":"English","abbr":"CAN","name_in_dataset":"Canada"},{"file_name":"canada","language":"English","abbr":"CA","name_in_dataset":"Canada"},{"file_name":"chile","language":"Spanish","abbr":"CHL","name_in_dataset":"Chile"},{"file_name":"chile","language":"Spanish","abbr":"CL","name_in_dataset":"Chile"},{"file_name":"colombia","language":"Spanish","abbr":"COL","name_in_dataset":"Colombia"},{"file_name":"colombia","language":"Spanish","abbr":"CO","name_in_dataset":"Colombia"},{"file_name":"costa_rica","language":"Spanish","abbr":"CRI","name_in_dataset":"Costa Rica"},{"file_name":"costa_rica","language":"Spanish","abbr":"CR","name_in_dataset":"Costa Rica"},{"file_name":"czechia","language":"Czech","abbr":"CZE","name_in_dataset":"Czechia"},{"file_name":"czechia","language":"Czech","abbr":"CZ","name_in_dataset":"Czechia"},{"file_name":"denmark","language":"Danish","abbr":"DNK","name_in_dataset":"Denmark"},{"file_name":"denmark","language":"Danish","abbr":"DK","name_in_dataset":"Denmark"},{"file_name":"dominican_republic","language":"Spanish","abbr":"DOM","name_in_dataset":"Dominican Republic"},{"file_name":"dominican_republic","language":"Spanish","abbr":"DO","name_in_dataset":"Dominican Republic"},{"file_name":"ecuador","language":"Spanish","abbr":"ECU","name_in_dataset":"Ecuador"},{"file_name":"ecuador","language":"Spanish","abbr":"EC","name_in_dataset":"Ecuador"},{"file_name":"france","language":"French","abbr":"FRA","name_in_dataset":"France"},{"file_name":"france","language":"French","abbr":"FR","name_in_dataset":"France"},{"file_name":"georgia","language":"Georgian","abbr":"GEO","name_in_dataset":"Georgia"},{"file_name":"georgia","language":"Georgian","abbr":"GE","name_in_dataset":"Georgia"},{"file_name":"germany","language":"German","abbr":"DEU","name_in_dataset":"Germany"},{"file_name":"germany","language":"German","abbr":"DE","name_in_dataset":"Germany"},{"file_name":"greece","language":"Greek","abbr":"GRC","name_in_dataset":"Greece"},{"file_name":"greece","language":"Greek","abbr":"GR","name_in_dataset":"Greece"},{"file_name":"hong_kong","language":"Chinese","abbr":"HKG","name_in_dataset":"Hong Kong"},{"file_name":"hong_kong","language":"Chinese","abbr":"HK","name_in_dataset":"Hong Kong"},{"file_name":"hungary","language":"Hungarian","abbr":"HUN","name_in_dataset":"Hungary"},{"file_name":"hungary","language":"Hungarian","abbr":"HU","name_in_dataset":"Hungary"},{"file_name":"iceland","language":"Icelandic","abbr":"ISL","name_in_dataset":"Iceland"},{"file_name":"iceland","language":"Icelandic","abbr":"IS","name_in_dataset":"Iceland"},{"file_name":"india","language":"English","abbr":"IND","name_in_dataset":"India"},{"file_name":"india","language":"English","abbr":"IN","name_in_dataset":"India"},{"file_name":"india","language":"Hindi","abbr":"IND","name_in_dataset":"India"},{"file_name":"india","language":"Hindi","abbr":"IN","name_in_dataset":"India"},{"file_name":"indonesia","language":"Indonesian","abbr":"IDN","name_in_dataset":"Indonesia"},{"file_name":"indonesia","language":"Indonesian","abbr":"ID","name_in_dataset":"Indonesia"},{"file_name":"israel","language":"Hebrew","abbr":"ISR","name_in_dataset":"Israel"},{"file_name":"israel","language":"Hebrew","abbr":"IL","name_in_dataset":"Israel"},{"file_name":"italy","language":"Italian","abbr":"ITA","name_in_dataset":"Italy"},{"file_name":"italy","language":"Italian","abbr":"IT","name_in_dataset":"Italy"},{"file_name":"jamaica","language":"English","abbr":"JAM","name_in_dataset":"Jamaica"},{"file_name":"jamaica","language":"English","abbr":"JM","name_in_dataset":"Jamaica"},{"file_name":"japan","language":"Japanese","abbr":"JPN","name_in_dataset":"Japan"},{"file_name":"japan","language":"Japanese","abbr":"JP","name_in_dataset":"Japan"},{"file_name":"mexico","language":"Spanish","abbr":"MEX","name_in_dataset":"Mexico"},{"file_name":"mexico","language":"Spanish","abbr":"MX","name_in_dataset":"Mexico"},{"file_name":"new_zealand","language":"English","abbr":"NZL","name_in_dataset":"New Zealand"},{"file_name":"new_zealand","language":"English","abbr":"NZ","name_in_dataset":"New Zealand"},{"file_name":"nigeria","language":"English","abbr":"NGA","name_in_dataset":"Nigeria"},{"file_name":"nigeria","language":"English","abbr":"NG","name_in_dataset":"Nigeria"},{"file_name":"norway","language":"Norwegian","abbr":"NOR","name_in_dataset":"Norway"},{"file_name":"norway","language":"Norwegian","abbr":"NO","name_in_dataset":"Norway"},{"file_name":"philippines","language":"Filipino","abbr":"PHL","name_in_dataset":"Philippines"},{"file_name":"philippines","language":"Filipino","abbr":"PH","name_in_dataset":"Philippines"},{"file_name":"poland","language":"Polish","abbr":"POL","name_in_dataset":"Poland"},{"file_name":"poland","language":"Polish","abbr":"PL","name_in_dataset":"Poland"},{"file_name":"portugal","language":"Portugese","abbr":"PRT","name_in_dataset":"Portugal"},{"file_name":"portugal","language":"Portugese","abbr":"PT","name_in_dataset":"Portugal"},{"file_name":"russia","language":"English","abbr":"RUS","name_in_dataset":"Russia"},{"file_name":"russia","language":"English","abbr":"RU","name_in_dataset":"Russia"},{"file_name":"russia","language":"English","abbr":"RUS","name_in_dataset":"Russia"},{"file_name":"russia","language":"English","abbr":"RU","name_in_dataset":"Russia"},{"file_name":"spain","language":"Spanish","abbr":"ESP","name_in_dataset":"Spain"},{"file_name":"spain","language":"Spanish","abbr":"ES","name_in_dataset":"Spain"},{"file_name":"turkey","language":"Turkish","abbr":"TUR","name_in_dataset":"Turkey"},{"file_name":"turkey","language":"Turkish","abbr":"TR","name_in_dataset":"Turkey"},{"file_name":"united_kingdom","language":"English","abbr":"GBR","name_in_dataset":"United Kingdom"},{"file_name":"united_kingdom","language":"English","abbr":"GBR","name_in_dataset":"Great Britain"},{"file_name":"united_kingdom","language":"English","abbr":"GB","name_in_dataset":"United Kingdom"},{"file_name":"united_kingdom","language":"English","abbr":"GB","name_in_dataset":"Great Britain"},{"file_name":"united_kingdom","language":"English","abbr":"UK","name_in_dataset":"United Kingdom"},{"file_name":"united_kingdom","language":"English","abbr":"UK","name_in_dataset":"Great Britain"},{"file_name":"uruguay","language":"Spanish","abbr":"URY","name_in_dataset":"Uruguay"},{"file_name":"uruguay","language":"Spanish","abbr":"UY","name_in_dataset":"Uruguay"},{"file_name":"venezuela","language":"Spanish","abbr":"VEN","name_in_dataset":"Venezuela"},{"file_name":"venezuela","language":"Spanish","abbr":"VE","name_in_dataset":"Venezuela"},{"file_name":"united_states_of_america","language":"English","abbr":"USA","name_in_dataset":"United States of America"},{"file_name":"united_states_of_america","language":"English","abbr":"USA","name_in_dataset":"United States"},{"file_name":"united_states_of_america","language":"English","abbr":"US","name_in_dataset":"United States of America"},{"file_name":"united_states_of_america","language":"English","abbr":"US","name_in_dataset":"United States"},{"file_name":"republic_of_korea","language":"Korean","abbr":"KOR","name_in_dataset":"Republic of Korea"},{"file_name":"republic_of_korea","language":"Korean","abbr":"KOR","name_in_dataset":"South Korea"},{"file_name":"republic_of_korea","language":"Korean","abbr":"KR","name_in_dataset":"Republic of Korea"},{"file_name":"republic_of_korea","language":"Korean","abbr":"KR","name_in_dataset":"South Korea"}]
+    country_names =  {
+    "file_name": [
+        "argentina", "argentina", "australia", "australia", "austria", "austria",
+        "azerbaijan", "azerbaijan", "azerbaijan", "azerbaijan", "bolivia", "bolivia",
+        "brazil", "brazil", "canada", "canada", "chile", "chile", "colombia", "colombia",
+        "costa_rica", "costa_rica", "czechia", "czechia", "denmark", "denmark",
+        "dominican_republic", "dominican_republic", "ecuador", "ecuador", "france",
+        "france", "georgia", "georgia", "germany", "germany", "greece", "greece",
+        "hong_kong", "hong_kong", "hungary", "hungary", "iceland", "iceland",
+        "india", "india", "india", "india", "indonesia", "indonesia", "israel", "israel",
+        "italy", "italy", "jamaica", "jamaica", "japan", "japan", "mexico", "mexico",
+        "new_zealand", "new_zealand", "nigeria", "nigeria", "norway", "norway",
+        "philippines", "philippines", "poland", "poland", "portugal", "portugal",
+        "russia", "russia", "russia", "russia", "spain", "spain", "turkey", "turkey",
+        "united_kingdom", "united_kingdom", "united_kingdom", "united_kingdom",
+        "united_kingdom", "united_kingdom", "uruguay", "uruguay", "venezuela", "venezuela",
+        "united_states_of_america", "united_states_of_america", "united_states_of_america",
+        "united_states_of_america", "republic_of_korea", "republic_of_korea",
+        "republic_of_korea", "republic_of_korea"
+    ],
+    "language": [
+        "Spanish", "Spanish", "English", "English", "German", "German",
+        "English", "English", "English", "English", "Spanish", "Spanish",
+        "Portuguese", "Portuguese", "English", "English", "Spanish", "Spanish",
+        "Spanish", "Spanish", "Spanish", "Spanish", "Czech", "Czech",
+        "Danish", "Danish", "Spanish", "Spanish", "Spanish", "Spanish",
+        "French", "French", "Georgian", "Georgian", "German", "German",
+        "Greek", "Greek", "Chinese", "Chinese", "Hungarian", "Hungarian",
+        "Icelandic", "Icelandic", "English", "English", "Hindi", "Hindi",
+        "Indonesian", "Indonesian", "Hebrew", "Hebrew", "Italian", "Italian",
+        "English", "English", "Japanese", "Japanese", "Spanish", "Spanish",
+        "English", "English", "English", "English", "Norwegian", "Norwegian",
+        "Filipino", "Filipino", "Polish", "Polish", "Portuguese", "Portuguese",
+        "English", "English", "English", "English", "Spanish", "Spanish",
+        "Turkish", "Turkish", "English", "English", "English", "English",
+        "English", "English", "Spanish", "Spanish", "Spanish", "Spanish",
+        "English", "English", "English", "English", "Korean", "Korean",
+        "Korean", "Korean"
+    ],
+    "abbr": [
+        "ARG", "AR", "AUS", "AU", "AUT", "AT", "AZE", "AZ", "AZE", "AZ", 
+        "BOL", "BO", "BRA", "BR", "CAN", "CA", "CHL", "CL", "COL", "CO", 
+        "CRI", "CR", "CZE", "CZ", "DNK", "DK", "DOM", "DO", "ECU", "EC", 
+        "FRA", "FR", "GEO", "GE", "DEU", "DE", "GRC", "GR", "HKG", "HK", 
+        "HUN", "HU", "ISL", "IS", "IND", "IN", "IND", "IN", "IDN", "ID", 
+        "ISR", "IL", "ITA", "IT", "JAM", "JM", "JPN", "JP", "MEX", "MX", 
+        "NZL", "NZ", "NGA", "NG", "NOR", "NO", "PHL", "PH", "POL", "PL", 
+        "PRT", "PT", "RUS", "RU", "RUS", "RU", "ESP", "ES", "TUR", "TR", 
+        "GBR", "GBR", "GB", "GB", "UK", "UK", "URY", "UY", "VEN", "VE", 
+        "USA", "USA", "US", "US", "KOR", "KOR", "KR", "KR"
+    ],
+    "name_in_dataset": [
+        "Argentina", "Argentina", "Australia", "Australia", "Austria", "Austria",
+        "Azerbaijan", "Azerbaijan", "Azerbaijan", "Azerbaijan", "Bolivia", 
+        "Bolivia", "Brazil", "Brazil", "Canada", "Canada", "Chile", "Chile", 
+        "Colombia", "Colombia", "Costa Rica", "Costa Rica", "Czechia", 
+        "Czechia", "Denmark", "Denmark", "Dominican Republic", "Dominican Republic", 
+        "Ecuador", "Ecuador", "France", "France", "Georgia", "Georgia", 
+        "Germany", "Germany", "Greece", "Greece", "Hong Kong", "Hong Kong", 
+        "Hungary", "Hungary", "Iceland", "Iceland", "India", "India", 
+        "India", "India", "Indonesia", "Indonesia", "Israel", "Israel", 
+        "Italy", "Italy", "Jamaica", "Jamaica", "Japan", "Japan", "Mexico", 
+        "Mexico", "New Zealand", "New Zealand", "Nigeria", "Nigeria", 
+        "Norway", "Norway", "Philippines", "Philippines", "Poland", "Poland", 
+        "Portugal", "Portugal", "Russia", "Russia", "Russia", "Russia", 
+        "Spain", "Spain", "Turkey", "Turkey", "United Kingdom", "Great Britain", 
+        "United Kingdom", "Great Britain", "United Kingdom", "Great Britain", 
+        "Uruguay", "Uruguay", "Venezuela", "Venezuela", "United States of America", 
+        "United States", "United States of America", "United States", 
+        "Republic of Korea", "South Korea", "Republic of Korea", "South Korea"
+    ]
+}
    
     return pl.DataFrame(country_names)
 

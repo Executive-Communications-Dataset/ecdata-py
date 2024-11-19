@@ -7,7 +7,7 @@ Author: Joshua Allen
 Author-email: joshua.f.allen@gmail.com
 License: CC-0
 Keywords: Datasets
-Requires-Python: >= 3.12
+Requires-Python: >= 3.10
 License-File: LICENSE.txt
 Requires-Dist: polars==1.8.2
 Requires-Dist: requests==2.32.3
