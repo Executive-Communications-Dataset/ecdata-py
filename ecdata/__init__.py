@@ -2,6 +2,8 @@ name = 'ecdata'
 
 # so you don't forget the equivalent of devtools::build is python setup.py sdist
 # equivalent of submit_cran() is twine upload dist/*
+# an important note you need to delete prior versions in dists just because pypi will yell at you
+# because well it already exists on pypi
 
 
 import polars as pl
@@ -10,6 +12,7 @@ import os
 import subprocess
 from pathlib import Path
 import warnings
+from memoization import cached
 
 __doc__ = """
 
@@ -23,7 +26,7 @@ Functions
 
 country_dictionary - Returns a Polars dataframe of countries in the dataset
 load_ecd - Main function for loading in dataset 
-example_scrapper- Opens 
+example_scrapper- Opens an example scrapper 
 
 
 """
@@ -54,7 +57,8 @@ def link_builder(country=None, language=None, ecd_version='1.0.0'):
     
     country_names = country_dictionary().with_columns(
         (pl.col('name_in_dataset').str.to_lowercase().alias('name_in_dataset')),
-        (pl.col('language').str.to_lowercase().alias('language'))
+        (pl.col('language').str.to_lowercase().alias('language')),
+        (pl.col('abbr').str.to_lowercase().alias('abbr'))
     )
     
     if country:
@@ -135,15 +139,13 @@ def get_ecd_release(repo='Executive-Communications-Dataset/ecdata', token=None, 
 def validate_input(country=None,language=None , full_ecd=False, version='1.0.0'):
     
     release = get_ecd_release()
-
-   
+    
     countries_df = country_dictionary().with_columns(
         (pl.col('name_in_dataset').str.to_lowercase().alias('name_in_dataset')),
         (pl.col('language').str.to_lowercase().alias('language')),
         (pl.col('abbr').str.to_lowercase().alias('abbr'))
     )
 
-   
     valid_countries = countries_df['name_in_dataset'].to_list()
 
     valid_languages = countries_df['language'].to_list()
@@ -199,32 +201,18 @@ def validate_input(country=None,language=None , full_ecd=False, version='1.0.0')
 
 
 
-def load_ecd(country = None,language = None, full_ecd = False, ecd_version = '1.0.0'):
-
-    """
-    Args:
-    country: (List[str], dict{'country1', 'country2'}, str): name of a country in our dataset. For a full list of countries do country_dictionary()
-    language: (List[str], dict{'language1', 'language2'}, str): name of a language in our dataset. For a full list of languages do country_dictionary()
-    full_ecd: (Bool): when True downloads the full Executive Communications Dataset
-    ecd_version: (str): a valid version of the Executive Communications Dataset. 
-    """
-
-
+def load_from_url(country = None,language = None, full_ecd = False, ecd_version = '1.0.0'):
+ 
     validate_input(country = country,language= language, full_ecd=full_ecd, version=ecd_version)
+
 
     if country is None and full_ecd is True:
 
         url = f'https://github.com/Executive-Communications-Dataset/ecdata/releases/download/{ecd_version}/full_ecd.parquet'
 
         ecd_data = pl.read_parquet(url)
-
-    elif country is not None and full_ecd is False and len(country) == 1:
-
-        url = link_builder(country=country, ecd_version=ecd_version)
-
-        ecd_data = pl.read_parquet(url)
     
-    elif country is not None and full_ecd is False and len(country) > 1:
+    elif country is not None and full_ecd is False:
 
         urls = link_builder(country = country, ecd_version=ecd_version)
 
@@ -244,7 +232,43 @@ def load_ecd(country = None,language = None, full_ecd = False, ecd_version = '1.
 
     return ecd_data
 
+@cached(ttl=86400)
+def load_from_url_cache(country=None, language=None, full_ecd=False, ecd_version='1.0.0'):
+    validate_input(country=country, language=language, full_ecd=full_ecd, version=ecd_version)
 
+    if country is None and full_ecd is True:
+        url = f'https://github.com/Executive-Communications-Dataset/ecdata/releases/download/{ecd_version}/full_ecd.parquet'
+        ecd_data = pl.read_parquet(url)
+    
+    elif country is not None and full_ecd is False:
+        urls = link_builder(country=country, ecd_version=ecd_version)
+        ecd_data = pl.concat([pl.read_parquet(i) for i in urls], how='vertical')
+    
+    elif country is None and full_ecd is False and language is not None:
+        urls = link_builder(language=language, ecd_version=ecd_version)
+        ecd_data = pl.concat([pl.read_parquet(i) for i in urls], how='vertical')
+
+    elif country is not None and full_ecd is False and language is not None:
+        urls = link_builder(country=country, language=language, ecd_version=ecd_version)
+        ecd_data = pl.concat([pl.read_parquet(i) for i in urls], how='vertical')
+
+    return ecd_data
+
+def load_ecd(country=None, language=None, full_ecd=False, ecd_version='1.0.0', cache=True):
+    """
+    Args:
+    country: (List[str], dict{'country1', 'country2'}, str): name of a country in our dataset. For a full list of countries do country_dictionary()
+    language: (List[str], dict{'language1', 'language2'}, str): name of a language in our dataset. For a full list of languages do country_dictionary()
+    full_ecd: (Bool): when True downloads the full Executive Communications Dataset
+    ecd_version: (str): a valid version of the Executive Communications Dataset. 
+    cache: (Bool): When true implements a cacheing method
+    """
+    if cache is True:
+        ecd_data = load_from_url_cache(country=country, language=language, full_ecd=full_ecd, ecd_version=ecd_version)
+    else:
+        ecd_data = load_from_url(country=country, language=language, full_ecd=full_ecd, ecd_version=ecd_version)
+
+    return ecd_data
 
 def example_scrapper(scrapper_type= 'static'):
 
@@ -276,3 +300,84 @@ def example_scrapper(scrapper_type= 'static'):
         os.startfile(file_path)
     else:
         raise OSError("Unsupported OS")
+
+
+@cached(ttl=86400)
+def lazy_load_from_url_cache(country = None,language = None, full_ecd = False, ecd_version = '1.0.0'):
+ 
+    validate_input(country = country,language= language, full_ecd=full_ecd, version=ecd_version)
+
+
+    if country is None and full_ecd is True:
+
+        url = f'https://github.com/Executive-Communications-Dataset/ecdata/releases/download/{ecd_version}/full_ecd.parquet'
+
+        ecd_data = pl.scan_parquet(url)
+    
+    elif country is not None and full_ecd is False:
+
+        urls = link_builder(country = country, ecd_version=ecd_version)
+
+        ecd_data = pl.concat([pl.scan_parquet(i) for i in urls], how = 'vertical')
+    
+    elif country is None and full_ecd is False and language is not None:
+
+        urls = link_builder(language = language, ecd_version=ecd_version)
+
+        ecd_data = pl.concat([pl.scan_parquet(i) for i in urls], how = 'vertical')
+
+    elif country is not None and full_ecd is False and language is not None:
+
+        urls = link_builder(country = country, language= language, ecd_version=ecd_version)
+
+        ecd_data = pl.concat([pl.scan_parquet(i) for i in urls], how = 'vertical')
+
+    return ecd_data
+
+def lazy_load_from_url(country = None,language = None, full_ecd = False, ecd_version = '1.0.0'):
+ 
+    validate_input(country = country,language= language, full_ecd=full_ecd, version=ecd_version)
+
+
+    if country is None and full_ecd is True:
+
+        url = f'https://github.com/Executive-Communications-Dataset/ecdata/releases/download/{ecd_version}/full_ecd.parquet'
+
+        ecd_data = pl.scan_parquet(url)
+    
+    elif country is not None and full_ecd is False:
+
+        urls = link_builder(country = country, ecd_version=ecd_version)
+
+        ecd_data = pl.concat([pl.scan_parquet(i) for i in urls], how = 'vertical')
+    
+    elif country is None and full_ecd is False and language is not None:
+
+        urls = link_builder(language = language, ecd_version=ecd_version)
+
+        ecd_data = pl.concat([pl.scan_parquet(i) for i in urls], how = 'vertical')
+
+    elif country is not None and full_ecd is False and language is not None:
+
+        urls = link_builder(country = country, language= language, ecd_version=ecd_version)
+
+        ecd_data = pl.concat([pl.scan_parquet(i) for i in urls], how = 'vertical')
+
+    return ecd_data
+
+
+def lazy_load_ecd(country=None, language=None, full_ecd=False, ecd_version='1.0.0', cache=True):
+    """
+    Args:
+    country: (List[str], dict{'country1', 'country2'}, str): name of a country in our dataset. For a full list of countries do country_dictionary()
+    language: (List[str], dict{'language1', 'language2'}, str): name of a language in our dataset. For a full list of languages do country_dictionary()
+    full_ecd: (Bool): when True downloads the full Executive Communications Dataset
+    ecd_version: (str): a valid version of the Executive Communications Dataset. 
+    cache: (Bool): When true implements a cacheing method
+    """
+    if cache is True:
+        ecd_data = lazy_load_from_url_cache(country=country, language=language, full_ecd=full_ecd, ecd_version=ecd_version)
+    else:
+        ecd_data = lazy_load_url(country=country, language=language, full_ecd=full_ecd, ecd_version=ecd_version)
+
+    return ecd_data
