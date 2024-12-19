@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: ecdata
-Version: 1.1.1
+Version: 1.1.3
 Summary: a pip installable package to distribute the Executive Communications Dataset
 Home-page: https://github.com/Executive-Communications-Dataset/ecdata-py
 Author: Joshua Allen

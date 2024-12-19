@@ -9,7 +9,7 @@ req = ['polars==1.8.2',
 
 setup(
     name = 'ecdata',
-    version = '1.1.1',
+    version = '1.1.3',
     description='a pip installable package to distribute the Executive Communications Dataset',
     author = 'Joshua Allen',
     author_email='joshua.f.allen@gmail.com',

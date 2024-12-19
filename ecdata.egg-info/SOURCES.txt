@@ -2,6 +2,8 @@ LICENSE.txt
 README.md
 setup.py
 ecdata/__init__.py
+ecdata/countries.py
+ecdata/country_manager.py
 ecdata.egg-info/PKG-INFO
 ecdata.egg-info/SOURCES.txt
 ecdata.egg-info/dependency_links.txt
