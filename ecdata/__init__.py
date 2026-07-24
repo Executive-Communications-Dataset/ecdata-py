@@ -10,6 +10,7 @@ import warnings
 from typing import Dict, List, Optional, Union
 
 import polars as pl
+from collections.abc import Iterable, Mapping
 from memoization import cached
 
 from .country_manager import CountryManager, CountryInput
@@ -99,6 +100,45 @@ def _warn_known_issues(urls: List[str], version: str) -> None:
                           UserWarning, stacklevel=3)
 
 
+def _warn_for_request(country, language, full_ecd, ecd_version) -> None:
+    """Emit known-issue warnings for a request.
+
+    Called from the public entry points rather than from _build, so that a
+    memoized result still warns. Otherwise a user sees the caveat once per
+    session and never again.
+    """
+    if full_ecd:
+        if ecd_version == "1.0.0":
+            warnings.warn(
+                "[ecdata 1.0.0] full_ecd.parquet duplicates Ecuador (429,954 "
+                "rows against 214,977 in the country asset) and contains a "
+                "single empty row for Portugal in place of its 64,522 "
+                "documents. Load those two countries individually.",
+                UserWarning, stacklevel=3,
+            )
+        return
+    try:
+        urls = _manager.build_urls(country, language, ecd_version)
+    except Exception:
+        return          # invalid input is reported by validate_input
+    _warn_known_issues(urls, ecd_version)
+
+
+def _hashable(value):
+    """Make a selector usable as a memoization key.
+
+    Lists and sets are unhashable, so passing one to the cached helper raised.
+    Sets are also unordered, so they are sorted to keep the key stable.
+    """
+    if value is None or isinstance(value, str):
+        return value
+    if isinstance(value, Mapping):
+        return tuple(sorted(str(k) for k in value))
+    if isinstance(value, Iterable):
+        return tuple(sorted(str(v) for v in value))
+    return value
+
+
 def _normalize(frame, columns: List[str]):
     """Project a frame onto CANONICAL_COLUMNS, recovering aliased columns."""
     renames = {src: dst for src, dst in _COLUMN_ALIASES.items()
@@ -127,14 +167,6 @@ def _build(country, language, full_ecd, ecd_version, normalize_schema,
     if full_ecd:
         url = (f"https://github.com/Executive-Communications-Dataset/ecdata"
                f"/releases/download/{ecd_version}/full_ecd.parquet")
-        if ecd_version == "1.0.0":
-            warnings.warn(
-                "[ecdata 1.0.0] full_ecd.parquet duplicates Ecuador (429,954 "
-                "rows against 214,977 in the country asset) and contains a "
-                "single empty row for Portugal in place of its 64,522 "
-                "documents. Load those two countries individually.",
-                UserWarning, stacklevel=3,
-            )
         frame = reader(url)
     else:
         _manager.validate_input(country, language)
@@ -144,7 +176,6 @@ def _build(country, language, full_ecd, ecd_version, normalize_schema,
                 "No release files matched that country/language combination. "
                 "Call country_dictionary() for the valid values."
             )
-        _warn_known_issues(urls, ecd_version)
         frames = [reader(url) for url in urls]
         # Country assets do not share a schema: some are missing canonical
         # columns, some carry extra scraper columns, and `date` is Date in two
@@ -166,6 +197,19 @@ def _build(country, language, full_ecd, ecd_version, normalize_schema,
 
 
 @cached(ttl=86400)
+def _load_ecd_cached(country, language, full_ecd, ecd_version,
+                     normalize_schema, deduplicate):
+    return _build(country, language, full_ecd, ecd_version,
+                  normalize_schema, deduplicate, lazy=False)
+
+
+@cached(ttl=86400)
+def _lazy_load_ecd_cached(country, language, full_ecd, ecd_version,
+                          normalize_schema, deduplicate):
+    return _build(country, language, full_ecd, ecd_version,
+                  normalize_schema, deduplicate, lazy=True)
+
+
 def load_ecd(country: Optional[CountryInput] = None,
              language: Optional[CountryInput] = None,
              full_ecd: bool = False,
@@ -181,7 +225,8 @@ def load_ecd(country: Optional[CountryInput] = None,
         language: Language(s) to filter by.
         full_ecd: When True, download the pooled dataset instead.
         ecd_version: Release tag to download.
-        cache: Whether to memoize the result for 24 hours.
+        cache: Memoize the result for 24 hours. Set False to force a fresh
+            download; previously this argument was accepted and ignored.
         normalize_schema: Project the result onto CANONICAL_COLUMNS, filling
             absent columns with null and recovering columns that appear under a
             different name in some assets. Set False to see the raw columns.
@@ -193,11 +238,14 @@ def load_ecd(country: Optional[CountryInput] = None,
     Returns:
         pl.DataFrame
     """
-    return _build(country, language, full_ecd, ecd_version,
-                  normalize_schema, deduplicate, lazy=False)
+    args = (_hashable(country), _hashable(language), full_ecd, ecd_version,
+            normalize_schema, deduplicate)
+    _warn_for_request(country, language, full_ecd, ecd_version)
+    if cache:
+        return _load_ecd_cached(*args)
+    return _build(*args, lazy=False)
 
 
-@cached(ttl=86400)
 def lazy_load_ecd(country: Optional[CountryInput] = None,
                   language: Optional[CountryInput] = None,
                   full_ecd: bool = False,
@@ -209,5 +257,9 @@ def lazy_load_ecd(country: Optional[CountryInput] = None,
 
     Takes the same arguments as load_ecd and returns a pl.LazyFrame.
     """
-    return _build(country, language, full_ecd, ecd_version,
-                  normalize_schema, deduplicate, lazy=True)
+    args = (_hashable(country), _hashable(language), full_ecd, ecd_version,
+            normalize_schema, deduplicate)
+    _warn_for_request(country, language, full_ecd, ecd_version)
+    if cache:
+        return _lazy_load_ecd_cached(*args)
+    return _build(*args, lazy=True)

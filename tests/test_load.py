@@ -71,3 +71,15 @@ def test_lazy_returns_lazyframe():
     lf = ec.lazy_load_ecd(country="Costa Rica")
     assert isinstance(lf, pl.LazyFrame)
     assert not lf.collect().is_empty()
+
+
+def test_known_issue_warns_again_on_cache_hit():
+    """A memoized result must still warn; otherwise the caveat is shown once
+    per session and silently dropped from then on."""
+    ec.load_ecd(country="Jamaica", ecd_version="1.0.0")
+    with pytest.warns(UserWarning, match="jamaica"):
+        ec.load_ecd(country="Jamaica", ecd_version="1.0.0")
+
+
+def test_cache_false_still_returns_data():
+    assert not ec.load_ecd(country="Costa Rica", cache=False).is_empty()
