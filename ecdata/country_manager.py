@@ -1,7 +1,12 @@
 import polars as pl
 import requests
-from typing import Optional, Union, List, Dict, Any
+from collections.abc import Iterable, Mapping
+from typing import Any, Dict, List, Optional, Union
 from .countries import COUNTRIES
+
+# A country or language selector: one name, an iterable of names, or a mapping
+# whose keys are names.
+CountryInput = Union[str, Iterable[str], Mapping[str, Any]]
 
 class CountryManager:
     def __init__(self):
@@ -25,8 +30,8 @@ class CountryManager:
         return self._df['abbr'].unique().to_list()
         
     def build_urls(self, 
-                  country: Optional[Union[str, List[str], Dict]] = None,
-                  language: Optional[Union[str, List[str], Dict]] = None,
+                  country: Optional[CountryInput] = None,
+                  language: Optional[CountryInput] = None,
                   version: str = '1.0.0') -> List[str]:
         """Build download URLs based on country/language filters"""
         df = self._df.clone()
@@ -57,8 +62,8 @@ class CountryManager:
         return urls.unique(subset='url')['url'].to_list()
     
     def validate_input(self,
-                      country: Optional[Union[str, List[str], Dict]] = None,
-                      language: Optional[Union[str, List[str], Dict]] = None) -> None:
+                      country: Optional[CountryInput] = None,
+                      language: Optional[CountryInput] = None) -> None:
         """Validate country and language inputs"""
         if country is not None:
             self._validate_type(country, "country")
@@ -69,23 +74,43 @@ class CountryManager:
             self._validate_values(language, self.valid_languages, "language")
     
     @staticmethod
-    def _normalize_input(value: Union[str, List[str], Dict]) -> List[str]:
-        """Convert input to normalized list of lowercase strings"""
+    def _normalize_input(value: CountryInput) -> List[str]:
+        """Convert input to a normalized list of lowercase strings.
+
+        Accepts a single name, any iterable of names (list, tuple, set,
+        generator), or a mapping -- in which case the *keys* are used.
+        """
         if isinstance(value, str):
             return [value.lower()]
-        elif isinstance(value, list):
-            return [v.lower() for v in value]
-        elif isinstance(value, dict):
-            return [k.lower() for k in value.keys()]
-        return []
-        
+        if isinstance(value, Mapping):
+            return [str(k).lower() for k in value.keys()]
+        if isinstance(value, Iterable):
+            return [str(v).lower() for v in value]
+        raise TypeError(
+            f'Cannot interpret {type(value).__name__} as a {"name"} list.'
+        )
+
     @staticmethod
     def _validate_type(value: Any, name: str) -> None:
-        if not isinstance(value, (str, list, dict)):
-            raise ValueError(f'Please provide a str, list, or dict to {name}. You provided {type(value)}')
+        # A bare string is a single name; anything else must be iterable.
+        # Previously this rejected sets and tuples outright, so the multi-value
+        # example in the README (a set literal) raised.
+        if isinstance(value, (str, Mapping)):
+            return
+        if isinstance(value, Iterable):
+            bad = [v for v in value if not isinstance(v, str)]
+            if bad:
+                raise ValueError(
+                    f'Every {name} must be a string. Got: {bad[:3]}'
+                )
+            return
+        raise ValueError(
+            f'Please provide a string or an iterable of strings to {name}. '
+            f'You provided {type(value)}'
+        )
             
     @staticmethod
-    def _validate_values(value: Union[str, List[str], Dict], valid_values: List[str], name: str) -> None:
+    def _validate_values(value: CountryInput, valid_values: List[str], name: str) -> None:
         normalized = CountryManager._normalize_input(value)
         invalid = [v for v in normalized if v not in valid_values]
         if invalid:
