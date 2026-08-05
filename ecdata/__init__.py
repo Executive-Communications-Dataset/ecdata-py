@@ -45,7 +45,9 @@ _COLUMN_ALIASES: Dict[str, str] = {
 }
 
 # Assets with known upstream defects, so users are told before they analyse
-# rather than after. Remove entries here as the data is corrected upstream.
+# rather than after. Every entry is a finding in docs/validation-report-1.0.0.txt
+# at ERROR or CRITICAL; the README table lists the same set. Remove entries here
+# as the data is corrected upstream.
 _KNOWN_DATA_ISSUES: Dict[str, Dict[str, str]] = {
     "1.0.0": {
         "ecuador": (
@@ -61,7 +63,7 @@ _KNOWN_DATA_ISSUES: Dict[str, Dict[str, str]] = {
         ),
         "venezuela": (
             "venezuela.parquet text is mis-decoded (UTF-8 read as latin-1) in "
-            "almost every row, e.g. 'RepAublica' for 'Republica'."
+            "almost every row, e.g. 'RepÃºblica' for 'República'."
         ),
         "jamaica": (
             "Every jamaica.parquet url has the host concatenated onto an "
@@ -75,13 +77,54 @@ _KNOWN_DATA_ISSUES: Dict[str, Dict[str, str]] = {
             "denmark.parquet holds 4.8M rows from only 2,658 distinct URLs; "
             "about 99% are exact duplicates. Pass deduplicate=True."
         ),
+        "france": (
+            "123,286 of france.parquet's 139,666 rows (88.3%) are exact "
+            "duplicates; 16,380 distinct rows remain. Pass deduplicate=True."
+        ),
+        "turkey": (
+            "234,327 of turkey.parquet's 299,628 rows (78.2%) are exact "
+            "duplicates; 65,301 distinct rows remain. Pass deduplicate=True."
+        ),
+        "mexico": (
+            "594,967 of mexico.parquet's 933,412 rows (63.7%) are exact "
+            "duplicates; 338,445 distinct rows remain. Pass deduplicate=True."
+        ),
+        "austria": (
+            "20,685 of austria.parquet's 34,579 rows (59.8%) are exact "
+            "duplicates; 13,894 distinct rows remain. Pass deduplicate=True."
+        ),
+        "republic_of_korea": (
+            "7,218 of republic_of_korea.parquet's 16,420 rows (44.0%) are exact "
+            "duplicates; 9,202 distinct rows remain. Pass deduplicate=True."
+        ),
+        "colombia": (
+            "All 2,603 colombia.parquet rows cite a YouTube watch URL rather "
+            "than an official source, so no document is traceable to a citable "
+            "government record. 22.5% are also exact duplicates."
+        ),
+        "russia": (
+            "url is 100% null in russia.parquet, so no document is traceable to "
+            "a source. The text is the English-language kremlin.ru edition, not "
+            "the Russian original, and language is labelled 'English'."
+        ),
+        "united_states_of_america": (
+            "executive is unreliable in united_states_of_america.parquet: Biden "
+            "is split across 'Joseph R. Biden, Jr.' (475 rows) and 'Jooseph R. "
+            "Biden, Jr.' (115,871), the Obama/Trump handover is dated 2016-01-20 "
+            "rather than 2017-01-20, and Gerald R. Ford's rows run to 1996. The "
+            "type column also holds president names, and language is 100% null."
+        ),
     }
 }
 
 
 def country_dictionary() -> pl.DataFrame:
-    """Return the countries in the dataset and their release file names."""
-    return _manager._df
+    """Return the countries in the dataset and their release file names.
+
+    A copy, so that a caller reshaping the frame it gets back cannot leave the
+    lookup table the rest of the package depends on in a broken state.
+    """
+    return _manager._df.clone()
 
 
 def get_ecd_release(**kwargs) -> List[str]:
@@ -116,6 +159,10 @@ def _warn_for_request(country, language, full_ecd, ecd_version) -> None:
                 "documents. Load those two countries individually.",
                 UserWarning, stacklevel=3,
             )
+        return
+    if not country and not language:
+        # No selector: build_urls would match the whole release and warn about
+        # every affected file, for a call that is about to raise anyway.
         return
     try:
         urls = _manager.build_urls(country, language, ecd_version)

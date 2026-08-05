@@ -163,12 +163,20 @@ that work around the worst of it.
 | `full_ecd.parquet` duplicates Ecuador and holds one empty row for Portugal | full dataset | load those two countries individually |
 | Text mis-decoded (UTF-8 read as latin-1) | Venezuela | none |
 | Every `url` has the host doubled | Jamaica | none |
+| `url` is 100% null, and the text is the English kremlin.ru edition rather than the Russian original | Russia | none |
+| Every `url` is a YouTube link rather than an official record | Colombia | none |
+| `executive` splits Biden across two spellings, dates the Obama/Trump handover to 2016, and runs Ford to 1996; `type` holds president names; `language` is null | USA | none |
 | Rows are paragraph-level in some countries and document-level in others | varies | check `text` length before comparing counts |
 
+Every country in this table raises a `UserWarning` when you load it, naming the
+defect. `tests/test_warnings.py` holds the table and the code to it, so the two
+cannot drift apart.
+
 `ecd_validate.py` in this repository reproduces all of the above from the
-published assets:
+published assets. It needs `duckdb` as well as `polars`:
 
 ``` bash
+pip install polars duckdb requests
 python ecd_validate.py --download 1.0.0 --data-dir ./data \
        --full-ecd ./data/full_ecd.parquet --fail-on ERROR
 ```
