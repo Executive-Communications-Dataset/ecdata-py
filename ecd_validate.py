@@ -184,9 +184,14 @@ class Engine:
     def sql(self, query, path):
         """Run SQL against a parquet file; {t} is the table placeholder."""
         q = query.format(t=f"read_parquet('{path}')")
-        if self.con is not None:
+        if self.con is None:
+            raise RuntimeError("duckdb required for this check; pip install duckdb")
+        try:
             return self.con.execute(q).fetchall()
-        raise RuntimeError("duckdb required for this check; pip install duckdb")
+        except Exception as exc:
+            # a check that cannot run should not take the whole report with it;
+            # callers treat RuntimeError as "skip this file"
+            raise RuntimeError(f"{type(exc).__name__}: {exc}") from exc
 
     def scan(self, path):
         return pl.scan_parquet(path)
@@ -501,7 +506,10 @@ def check_executives(paths, rep, engine):
             continue
         try:
             rows = engine.sql(
-                "SELECT executive, count(*) AS n, min(date) AS mn, max(date) AS mx "
+                # cast away the time zone: duckdb needs pytz to hand a
+                # TIMESTAMPTZ back to Python, and pytz is not a dependency here
+                "SELECT executive, count(*) AS n, "
+                "min(date::TIMESTAMP) AS mn, max(date::TIMESTAMP) AS mx "
                 "FROM {t} WHERE executive IS NOT NULL GROUP BY executive "
                 "ORDER BY mn", path)
         except RuntimeError:
