@@ -15,6 +15,20 @@ def test_country_dictionary_columns():
     assert set(df.columns) == {"file_name", "language", "abbr", "name_in_dataset"}
 
 
+def test_country_dictionary_is_a_copy():
+    """The frame handed out must not be the lookup table itself.
+
+    It used to be returned by reference, so a caller dropping a column they did
+    not want left every later load_ecd() raising ColumnNotFoundError: 'abbr'.
+    """
+    import ecdata as ec
+
+    ec.country_dictionary().drop_in_place("abbr")
+    assert "abbr" in country_dictionary().columns
+    # and the manager still resolves an abbreviation
+    assert ec._manager.build_urls(country="USA")
+
+
 def test_no_duplicate_rows():
     assert len(COUNTRIES) == len(set(COUNTRIES)), "duplicate rows in COUNTRIES"
 
