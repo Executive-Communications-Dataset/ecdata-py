@@ -1,21 +1,33 @@
-from dataclasses import dataclass
-from typing import List, Optional
+"""Country lookup table backing `country_dictionary()` and URL construction.
 
-@dataclass
+`COUNTRIES` is built once, at import, from `_BASE_COUNTRIES` plus the alias rows
+derived from `COUNTRY_VARIANTS`. It is deliberately assembled by a function
+rather than by mutating a module-level list in place, so that re-importing or
+reloading the module cannot append the aliases a second time.
+"""
+
+from dataclasses import dataclass
+from typing import Dict, List, Tuple
+
+
+@dataclass(frozen=True)
 class Country:
     file_name: str
     language: str
     abbr: str
     name_in_dataset: str
 
-COUNTRIES: List[Country] = [
+
+# One row per (file_name, language). A country appears more than once only when
+# the dataset genuinely carries more than one language for it -- India is the
+# only such case.
+_BASE_COUNTRIES: Tuple[Country, ...] = (
     Country("argentina", "Spanish", "ARG", "Argentina"),
     Country("australia", "English", "AUS", "Australia"),
     Country("austria", "German", "AUT", "Austria"),
     Country("azerbaijan", "English", "AZE", "Azerbaijan"),
-    Country("azerbaijan", "English", "AZE", "Azerbaijan"),
     Country("bolivia", "Spanish", "BOL", "Bolivia"),
-    Country("brazil", "Portugese", "BRA", "Brazil"),
+    Country("brazil", "Portuguese", "BRA", "Brazil"),
     Country("canada", "English", "CAN", "Canada"),
     Country("chile", "Spanish", "CHL", "Chile"),
     Country("colombia", "Spanish", "COL", "Colombia"),
@@ -44,37 +56,44 @@ COUNTRIES: List[Country] = [
     Country("norway", "Norwegian", "NOR", "Norway"),
     Country("philippines", "Filipino", "PHL", "Philippines"),
     Country("poland", "Polish", "POL", "Poland"),
-    Country("portugal", "Portugese", "PRT", "Portugal"),
-    Country("russia", "English", "RUS", "Russia"),
+    Country("portugal", "Portuguese", "PRT", "Portugal"),
+    Country("republic_of_korea", "Korean", "KOR", "Republic of Korea"),
     Country("russia", "English", "RUS", "Russia"),
     Country("spain", "Spanish", "ESP", "Spain"),
     Country("turkey", "Turkish", "TUR", "Turkey"),
     Country("united_kingdom", "English", "GBR", "United Kingdom"),
+    Country("united_states_of_america", "English", "USA", "United States of America"),
     Country("uruguay", "Spanish", "URY", "Uruguay"),
     Country("venezuela", "Spanish", "VEN", "Venezuela"),
-    Country("united_states_of_america", "English", "USA", "United States of America"),
-    Country("republic_of_korea", "Korean", "KOR", "Republic of Korea")
-]
+)
 
-# Add two-letter codes and alternative names
-COUNTRY_VARIANTS = {
+# Two-letter codes and colloquial names users are likely to reach for. A
+# two-character entry is treated as an additional `abbr`; anything longer is
+# treated as an additional `name_in_dataset`.
+COUNTRY_VARIANTS: Dict[str, List[str]] = {
     "united_kingdom": ["GB", "UK", "Great Britain"],
     "united_states_of_america": ["US", "United States", "USA"],
-    "republic_of_korea": ["KR", "South Korea"]
+    "republic_of_korea": ["KR", "South Korea"],
 }
 
-# Add additional country entries for variants
-additional_countries = []
-for country in COUNTRIES:
-    if country.file_name in COUNTRY_VARIANTS:
-        for variant in COUNTRY_VARIANTS[country.file_name]:
-            if len(variant) == 2:  # Two-letter code
-                additional_countries.append(
-                    Country(country.file_name, country.language, variant, country.name_in_dataset)
-                )
-            else:  # Alternative name
-                additional_countries.append(
-                    Country(country.file_name, country.language, country.abbr, variant)
-                )
 
-COUNTRIES.extend(additional_countries) 
+def _build_countries() -> List[Country]:
+    """Return the base table plus one alias row per variant.
+
+    Pure: called once below, and safe to call again from tests.
+    """
+    countries = list(_BASE_COUNTRIES)
+    aliases: List[Country] = []
+    for country in _BASE_COUNTRIES:
+        for variant in COUNTRY_VARIANTS.get(country.file_name, ()):
+            if len(variant) == 2:
+                aliases.append(Country(country.file_name, country.language,
+                                       variant, country.name_in_dataset))
+            else:
+                aliases.append(Country(country.file_name, country.language,
+                                       country.abbr, variant))
+    countries.extend(aliases)
+    return countries
+
+
+COUNTRIES: List[Country] = _build_countries()

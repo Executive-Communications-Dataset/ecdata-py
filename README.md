@@ -11,8 +11,8 @@ data dictionaries, and a sample script to help users expand the dataset.
 For our full replication archive, see the relevant subdirectories in
 [our
 GitHub](https://github.com/joshuafayallen/executivestatements/tree/main/raw-data).
-For a Python implementation see
-[execcommunications-py](https://github.com/joshuafayallen/executivecommunications-py).
+This repository *is* the Python implementation; for the R package see
+[ecdata](https://github.com/Executive-Communications-Dataset/ecdata).
 
 ## Installation
 
@@ -27,7 +27,7 @@ pak::pkg_install('joshuafayallen/ecdata')
 ## Python
 
 
-    (uv) pip install git+https://github.com/joshuafayallen/executivecommunications-py
+    pip install git+https://github.com/Executive-Communications-Dataset/ecdata-py
 
 ## Usage
 
@@ -55,9 +55,8 @@ ecd_country_dictionary |>
 
 ``` python
 import ecdata as ec
-import polars as pl 
 
-ec.ecd_country_dictionary().head(int = 2)
+ec.country_dictionary().head(2)
 ```
 
 ## Loading the Executive Communications Dataset
@@ -91,7 +90,7 @@ load_ecd(country = 'United States of America') |>
 ## Python
 
 ``` python
-ec.load_ecd(country = 'United States of America').head(int = 2)
+ec.load_ecd(country = 'United States of America').head(2)
 ```
 
 You can specify multiple countries to `load_ecd` like this
@@ -133,10 +132,46 @@ load_ecd(country = c('United States of America', 'Turkey', 'France'))  |>
 ## Python
 
 ``` python
-ec.load_ecd(country = {'United States of America', 'Turkey', 'France'}).head(n = 2)
+ec.load_ecd(country = ['United States of America', 'Turkey', 'France']).head(2)
 ```
 
-For the Python version you can feed `load_ecd` a list or a dictionary.
+`load_ecd` accepts a single name, any iterable of names (list, tuple, set) or
+a mapping whose keys are names. You can also filter by language, and use
+`lazy_load_ecd` for a `LazyFrame` if you would rather not materialise a large
+country like India or Denmark:
+
+``` python
+ec.load_ecd(language = 'Danish')
+
+(ec.lazy_load_ecd(country = 'India', deduplicate = True)
+   .filter(pl.col('year_of_statement') >= 2020)
+   .collect())
+```
+
+## Known data issues in release 1.0.0
+
+An audit of the `1.0.0` release assets turned up defects that affect analysis.
+They are upstream of this package -- it distributes the release as published --
+but `load_ecd` warns when you touch an affected asset, and offers two options
+that work around the worst of it.
+
+| Issue | Affected | Workaround |
+|---|---|---|
+| `ecuador.parquet` and `dominican_republic.parquet` hold the same pooled corpus with swapped country and executive labels | Ecuador, Dominican Republic | none -- treat both as unreliable |
+| Up to 99% of rows are exact duplicates | India, Denmark, France, Turkey, Mexico, Austria, Korea | `deduplicate=True` |
+| Assets do not share a schema, so a plain concat raises | Portugal, Dominican Republic, USA, Germany | handled: `normalize_schema=True` (default) |
+| `full_ecd.parquet` duplicates Ecuador and holds one empty row for Portugal | full dataset | load those two countries individually |
+| Text mis-decoded (UTF-8 read as latin-1) | Venezuela | none |
+| Every `url` has the host doubled | Jamaica | none |
+| Rows are paragraph-level in some countries and document-level in others | varies | check `text` length before comparing counts |
+
+`ecd_validate.py` in this repository reproduces all of the above from the
+published assets:
+
+``` bash
+python ecd_validate.py --download 1.0.0 --data-dir ./data \
+       --full-ecd ./data/full_ecd.parquet --fail-on ERROR
+```
 
 ## Example Scrappers
 

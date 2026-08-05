@@ -1,0 +1,42 @@
+name: validate release
+
+# Guards the data itself. Run this before publishing a new release: it fails
+# on the class of defects found in 1.0.0 (schema drift, cross-country corpus
+# overlap, mass duplication, executive term overlaps, full_ecd row-count
+# mismatches).
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag to validate"
+        required: true
+        default: "1.0.0"
+  schedule:
+    - cron: "0 6 1 * *"   # monthly drift check
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install polars duckdb requests
+      - name: Download and validate release assets
+        run: |
+          python ecd_validate.py \
+            --download "${{ github.event.inputs.version || '1.0.0' }}" \
+            --data-dir ./data \
+            --out validation-report.txt \
+            --json validation-findings.json \
+            --fail-on ERROR
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-report
+          path: |
+            validation-report.txt
+            validation-findings.json
