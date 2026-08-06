@@ -25,7 +25,7 @@ __all__ = [
 
 _manager = CountryManager()
 
-DEFAULT_ECD_VERSION = "1.0.2"
+DEFAULT_ECD_VERSION = "1.0.3"
 
 # The schema the dataset documents. Country assets do not all conform to it, so
 # `normalize_schema=True` projects whatever arrives onto this shape.
@@ -170,6 +170,35 @@ _KNOWN_DATA_ISSUES["1.0.2"] = {
         "Obama/Trump handover is dated 2016-01-20 rather than 2017-01-20 and "
         "Gerald R. Ford's rows run to 1996. The type column also holds "
         "president names."
+    ),
+}
+
+# 1.0.3 corrects `executive`: the Obama/Trump handover, and Italy's composite
+# values. It is not built on 1.0.2's table, because several of that table's
+# entries were warning about term overlaps that turned out to be an artefact of
+# the validator comparing date spans rather than counting documents. Austria,
+# Denmark, Greece, Israel and Italy hold no double-attributed documents at all.
+_KNOWN_DATA_ISSUES["1.0.3"] = {
+    "colombia": _KNOWN_DATA_ISSUES["1.0.1"]["colombia"],
+    "venezuela": _KNOWN_DATA_ISSUES["1.0.1"]["venezuela"],
+    "ecuador": _KNOWN_DATA_ISSUES["1.0.1"]["ecuador"],
+    "dominican_republic": _KNOWN_DATA_ISSUES["1.0.1"]["dominican_republic"],
+    "russia": (
+        "url is 100% null in russia.parquet, and the text is the English "
+        "kremlin.ru edition rather than the Russian original."
+    ),
+    "united_states_of_america": (
+        "The type column in united_states_of_america.parquet holds president "
+        "names alongside genuine document categories, so it cannot be used as a "
+        "filter."
+    ),
+    "brazil": (
+        "A few brazil.parquet rows are credited to Michel Temer but dated before "
+        "he took office in May 2016."
+    ),
+    "chile": (
+        "A few chile.parquet rows are credited to Gabriel Boric but dated before "
+        "he took office in March 2022."
     ),
 }
 
