@@ -25,7 +25,7 @@ __all__ = [
 
 _manager = CountryManager()
 
-DEFAULT_ECD_VERSION = "1.0.1"
+DEFAULT_ECD_VERSION = "1.0.2"
 
 # The schema the dataset documents. Country assets do not all conform to it, so
 # `normalize_schema=True` projects whatever arrives onto this shape.
@@ -159,6 +159,18 @@ _KNOWN_DATA_ISSUES: Dict[str, Dict[str, str]] = {
             "or join."
         ),
     },
+}
+
+# 1.0.2 is 1.0.1 with `language` filled for Portugal and the United States. Every
+# other caveat carries over, so the table is inherited rather than restated.
+_KNOWN_DATA_ISSUES["1.0.2"] = {
+    **_KNOWN_DATA_ISSUES["1.0.1"],
+    "united_states_of_america": (
+        "executive is unreliable in united_states_of_america.parquet: the "
+        "Obama/Trump handover is dated 2016-01-20 rather than 2017-01-20 and "
+        "Gerald R. Ford's rows run to 1996. The type column also holds "
+        "president names."
+    ),
 }
 
 # Releases whose full_ecd.parquet does not reconcile against the country assets.
