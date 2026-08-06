@@ -70,7 +70,7 @@ def test_deduplicate_reduces_rows():
 # --- 1.0.1, the repair release ------------------------------------------------
 
 def test_default_version_is_the_repaired_release():
-    assert ec.DEFAULT_ECD_VERSION == "1.0.2"
+    assert ec.DEFAULT_ECD_VERSION == "1.0.3"
 
 
 def test_language_is_populated_everywhere():
@@ -99,6 +99,20 @@ def test_repaired_release_unpooled_ecuador():
     ecu = ec.load_ecd(country="Ecuador")
     assert ecu["country"].unique().to_list() == ["Ecuador"]
     assert ecu["url"].str.contains(r"\.do/").sum() == 0
+
+
+def test_no_composite_executives_remain():
+    """1.0.3 splits Italy's `Romano Prodi/Massimo D'Alema` and friends."""
+    df = ec.load_ecd(country="Italy")
+    assert df["executive"].str.contains("/").sum() == 0
+
+
+def test_countries_whose_overlaps_were_a_validator_bug_do_not_warn():
+    """Denmark, Israel, Austria and Greece hold no double-attributed rows."""
+    for country in ("Denmark", "Israel", "Austria", "Greece"):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            ec.load_ecd(country=country, ecd_version="1.0.3")
 
 
 def test_repaired_release_still_warns_about_what_is_unfixed():
