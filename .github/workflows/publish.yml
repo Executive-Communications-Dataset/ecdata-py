@@ -1,0 +1,62 @@
+name: publish
+
+# Publishes to PyPI with Trusted Publishing: PyPI verifies this workflow's OIDC
+# identity, so there is no API token to create, store or rotate.
+#
+# One-time setup, on PyPI, under Manage project -> Publishing -> Add a pending
+# publisher (or "Add" if the project already exists):
+#
+#   Owner:            Executive-Communications-Dataset
+#   Repository:       ecdata-py
+#   Workflow name:    publish.yml
+#   Environment name: pypi
+#
+# Then create a `pypi` environment in this repository's settings and, if you want
+# a human gate before anything leaves, add yourself as a required reviewer.
+#
+# To release: bump the version in setup.py, merge, then push a tag matching it.
+#
+#   git tag v1.2.0 && git push origin v1.2.0
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build
+      - run: python -m build
+      - name: Fail if the tag does not match the version in setup.py
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version=$(ls dist/*.tar.gz | sed -E 's/.*ecdata-(.*)\.tar\.gz/\1/')
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "$version" != "$tag" ]; then
+            echo "tag $tag does not match setup.py version $version" >&2
+            exit 1
+          fi
+          echo "tag and version agree: $version"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write        # the OIDC token Trusted Publishing verifies
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
