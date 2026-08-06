@@ -4,6 +4,8 @@ Skipped unless pytest is run with --run-network. The countries used here are
 the smallest in the release, so the whole module downloads well under 15 MB.
 """
 
+import warnings
+
 import polars as pl
 import pytest
 
@@ -36,30 +38,71 @@ def test_set_input_matches_list_input():
 
 
 def test_schema_drift_does_not_raise():
-    """portugal.parquet is missing six canonical columns and stores `date` as
-    Date rather than Datetime. Concatenating it used to raise."""
-    df = ec.load_ecd(country=["Portugal", "Costa Rica"])
+    """In 1.0.0 portugal.parquet is missing six canonical columns and stores
+    `date` as Date rather than Datetime. Concatenating it used to raise."""
+    df = ec.load_ecd(country=["Portugal", "Costa Rica"], ecd_version="1.0.0")
     assert df.columns == ec.CANONICAL_COLUMNS
     assert sorted(df["country"].unique().to_list()) == ["Costa Rica", "Portugal"]
 
 
 def test_aliased_columns_are_recovered():
-    """Portugal's document URL lives in `urls`, not `url`."""
-    df = ec.load_ecd(country="Portugal")
+    """In 1.0.0 Portugal's document URL lives in `urls`, not `url`."""
+    df = ec.load_ecd(country="Portugal", ecd_version="1.0.0")
     assert df["url"].null_count() == 0
 
 
 def test_normalize_schema_can_be_disabled():
-    raw = ec.load_ecd(country="Portugal", normalize_schema=False)
+    """The alias is only present in 1.0.0; 1.0.1 publishes the canonical name."""
+    raw = ec.load_ecd(country="Portugal", normalize_schema=False,
+                      ecd_version="1.0.0")
     assert "urls" in raw.columns
 
 
 def test_deduplicate_reduces_rows():
-    plain = ec.load_ecd(country="Jamaica")
-    deduped = ec.load_ecd(country="Jamaica", deduplicate=True)
+    plain = ec.load_ecd(country="Jamaica", ecd_version="1.0.0")
+    deduped = ec.load_ecd(country="Jamaica", deduplicate=True,
+                          ecd_version="1.0.0")
     assert deduped.height < plain.height
     assert deduped.height == deduped.unique(
         subset=["country", "url", "text", "date"]).height
+
+
+# --- 1.0.1, the repair release ------------------------------------------------
+
+def test_default_version_is_the_repaired_release():
+    assert ec.DEFAULT_ECD_VERSION == "1.0.1"
+
+
+def test_repaired_release_has_no_duplicates():
+    """deduplicate=True is a no-op on 1.0.1: the duplicates are gone at source."""
+    plain = ec.load_ecd(country="Jamaica")
+    deduped = ec.load_ecd(country="Jamaica", deduplicate=True)
+    assert plain.height == deduped.height
+
+
+def test_repaired_release_publishes_the_canonical_column_names():
+    """Portugal's `urls` is published as `url`, so the alias is no longer needed."""
+    raw = ec.load_ecd(country="Portugal", normalize_schema=False)
+    assert "urls" not in raw.columns
+    assert raw["url"].null_count() == 0
+
+
+def test_repaired_release_unpooled_ecuador():
+    """Ecuador and the Dominican Republic no longer share a corpus."""
+    ecu = ec.load_ecd(country="Ecuador")
+    assert ecu["country"].unique().to_list() == ["Ecuador"]
+    assert ecu["url"].str.contains(r"\.do/").sum() == 0
+
+
+def test_repaired_release_still_warns_about_what_is_unfixed():
+    with pytest.warns(UserWarning, match="kremlin"):
+        ec.load_ecd(country="Russia")
+
+
+def test_repaired_release_does_not_warn_about_what_is_fixed():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        ec.load_ecd(country="Jamaica")
 
 
 def test_known_issue_warns():

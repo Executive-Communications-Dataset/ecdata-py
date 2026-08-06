@@ -25,7 +25,7 @@ __all__ = [
 
 _manager = CountryManager()
 
-DEFAULT_ECD_VERSION = "1.0.0"
+DEFAULT_ECD_VERSION = "1.0.1"
 
 # The schema the dataset documents. Country assets do not all conform to it, so
 # `normalize_schema=True` projects whatever arrives onto this shape.
@@ -114,7 +114,61 @@ _KNOWN_DATA_ISSUES: Dict[str, Dict[str, str]] = {
             "rather than 2017-01-20, and Gerald R. Ford's rows run to 1996. The "
             "type column also holds president names, and language is 100% null."
         ),
-    }
+    },
+    # 1.0.1 is 1.0.0 with the repairable defects fixed (see the release notes).
+    # What is left needs the source data back or a decision about what a column
+    # means, so it still warns.
+    "1.0.1": {
+        "colombia": (
+            "Every url in colombia.parquet is a YouTube link rather than an "
+            "official record, and whether the text is an official transcript or "
+            "an auto-generated caption track is not stated."
+        ),
+        "russia": (
+            "url is 100% null in russia.parquet, and the text is the English "
+            "kremlin.ru edition rather than the Russian original."
+        ),
+        "united_states_of_america": (
+            "executive is unreliable in united_states_of_america.parquet: the "
+            "Obama/Trump handover is dated 2016-01-20 rather than 2017-01-20 and "
+            "Gerald R. Ford's rows run to 1996. The type column also holds "
+            "president names, and language is 100% null."
+        ),
+        "venezuela": (
+            "100 rows of venezuela.parquet could not be repaired: a byte was lost "
+            "at ingest, so the mis-decoded text does not round-trip."
+        ),
+        "ecuador": (
+            "ecuador.parquet covers 2023-11-23 to 2024-03-19 only (2,236 "
+            "documents, Daniel Noboa). The wider span in 1.0.0 was an artefact of "
+            "a corpus pooled with the Dominican Republic."
+        ),
+        "dominican_republic": (
+            "dominican_republic.parquet ends 2020-08-16 and is almost entirely "
+            "Danilo Medina. There is no Luis Abinader corpus."
+        ),
+        **{
+            country: (f"Executive terms overlap in {country}.parquet: some "
+                      f"documents are credited to the wrong leader.")
+            for country in ("austria", "brazil", "chile", "denmark", "greece",
+                            "israel")
+        },
+        "italy": (
+            "Executive terms overlap in italy.parquet, and some values are "
+            "composite ('Romano Prodi/Massimo D'Alema'), so they will not group "
+            "or join."
+        ),
+    },
+}
+
+# Releases whose full_ecd.parquet does not reconcile against the country assets.
+# 1.0.1 rebuilt it from them, so it is absent here and no warning fires.
+_FULL_ECD_ISSUES: Dict[str, str] = {
+    "1.0.0": (
+        "full_ecd.parquet duplicates Ecuador (429,954 rows against 214,977 in "
+        "the country asset) and contains a single empty row for Portugal in "
+        "place of its 64,522 documents. Load those two countries individually."
+    ),
 }
 
 
@@ -151,14 +205,10 @@ def _warn_for_request(country, language, full_ecd, ecd_version) -> None:
     session and never again.
     """
     if full_ecd:
-        if ecd_version == "1.0.0":
-            warnings.warn(
-                "[ecdata 1.0.0] full_ecd.parquet duplicates Ecuador (429,954 "
-                "rows against 214,977 in the country asset) and contains a "
-                "single empty row for Portugal in place of its 64,522 "
-                "documents. Load those two countries individually.",
-                UserWarning, stacklevel=3,
-            )
+        message = _FULL_ECD_ISSUES.get(ecd_version)
+        if message:
+            warnings.warn(f"[ecdata {ecd_version}] {message}",
+                          UserWarning, stacklevel=3)
         return
     if not country and not language:
         # No selector: build_urls would match the whole release and warn about

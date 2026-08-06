@@ -148,12 +148,30 @@ ec.load_ecd(language = 'Danish')
    .collect())
 ```
 
+## Which release you get
+
+`load_ecd` defaults to **`1.0.1`**, a repair release: `1.0.0` with the defects that
+could be fixed from the published files fixed. Pass `ecd_version='1.0.0'` for the
+original assets, which are still published and unchanged.
+
+**Row counts are 82.8% lower in `1.0.1`** — 2,891,622 rows against 16,845,134 — because
+that is how many rows were exact duplicates. India goes from 7,970,491 to 82,682.
+Ecuador and the Dominican Republic are also much smaller, because in `1.0.0` they
+shared one pooled corpus published under two labels. If you have numbers from
+`1.0.0`, expect them to change, and read the
+[release notes](https://github.com/Executive-Communications-Dataset/ecdata/releases/tag/1.0.1)
+before you do.
+
+What `1.0.1` still gets wrong — overlapping executive terms, Colombia's YouTube
+provenance, Russia's English translations, `type` in the US file — needs the source
+data back, so `load_ecd` still warns for those assets.
+
 ## Known data issues in release 1.0.0
 
-An audit of the `1.0.0` release assets turned up defects that affect analysis.
-They are upstream of this package -- it distributes the release as published --
-but `load_ecd` warns when you touch an affected asset, and offers two options
-that work around the worst of it.
+These are the defects in the original `1.0.0` assets. Most are fixed in `1.0.1`; the
+table is kept because `1.0.0` is still published and still citable. `load_ecd` warns
+when you touch an affected asset and offers two options that work around the worst
+of it.
 
 | Issue | Affected | Workaround |
 |---|---|---|
