@@ -70,7 +70,14 @@ def test_deduplicate_reduces_rows():
 # --- 1.0.1, the repair release ------------------------------------------------
 
 def test_default_version_is_the_repaired_release():
-    assert ec.DEFAULT_ECD_VERSION == "1.0.1"
+    assert ec.DEFAULT_ECD_VERSION == "1.0.2"
+
+
+def test_language_is_populated_everywhere():
+    """1.0.2 fills `language`, which was null for all of Portugal and the US."""
+    for country in ("Portugal", "United States of America"):
+        df = ec.load_ecd(country=country)
+        assert df["language"].null_count() == 0, country
 
 
 def test_repaired_release_has_no_duplicates():
