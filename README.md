@@ -198,14 +198,10 @@ Every country in this table raises a `UserWarning` when you load it, naming the
 defect. `tests/test_warnings.py` holds the table and the code to it, so the two
 cannot drift apart.
 
-`ecd_validate.py` in this repository reproduces all of the above from the
-published assets. It needs `duckdb` as well as `polars`:
-
-``` bash
-pip install polars duckdb requests
-python ecd_validate.py --download 1.0.0 --data-dir ./data \
-       --full-ecd ./data/full_ecd.parquet --fail-on ERROR
-```
+[`ecd_validate.py`](https://github.com/Executive-Communications-Dataset/ecdata/blob/main/data-validation/ecd_validate.py),
+in the dataset repository, reproduces all of the above from the published assets,
+and [`ecd_repair.py`](https://github.com/Executive-Communications-Dataset/ecdata/blob/main/data-validation/ecd_repair.py)
+alongside it is what produced `1.0.1` and `1.0.2`.
 
 ## Example Scrappers
 
