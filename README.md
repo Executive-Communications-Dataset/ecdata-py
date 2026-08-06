@@ -16,18 +16,26 @@ This repository *is* the Python implementation; for the R package see
 
 ## Installation
 
-To install `ecdata` run.
+Install from GitHub. **Neither package index currently serves a current version**:
+PyPI holds `1.1.3`, which predates the data audit and defaults to data release
+`1.0.0`, and the R package was archived from CRAN on 2025-01-12. Until both are
+re-published, GitHub is the only route to a package that defaults to the repaired
+data.
+
+## Python
+
+    pip install git+https://github.com/Executive-Communications-Dataset/ecdata-py
 
 ## R
 
 ``` r
-pak::pkg_install('joshuafayallen/ecdata')
+pak::pkg_install('Executive-Communications-Dataset/ecdata')
 ```
 
-## Python
-
-
-    pip install git+https://github.com/Executive-Communications-Dataset/ecdata-py
+Both give you version `1.2.0`, which defaults to data release
+[`1.0.1`](https://github.com/Executive-Communications-Dataset/ecdata/releases/tag/1.0.1).
+`pip install ecdata` will silently give you `1.1.3` instead, which defaults to
+`1.0.0` and carries the defects the audit found.
 
 ## Usage
 
