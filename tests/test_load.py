@@ -70,7 +70,7 @@ def test_deduplicate_reduces_rows():
 # --- 1.0.1, the repair release ------------------------------------------------
 
 def test_default_version_is_the_repaired_release():
-    assert ec.DEFAULT_ECD_VERSION == "1.0.3"
+    assert ec.DEFAULT_ECD_VERSION == "1.0.5"
 
 
 def test_language_is_populated_everywhere():
@@ -113,6 +113,14 @@ def test_countries_whose_overlaps_were_a_validator_bug_do_not_warn():
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             ec.load_ecd(country=country, ecd_version="1.0.3")
+
+
+def test_us_type_has_no_president_names():
+    """1.0.5 rebuilt `type` from the source url."""
+    df = ec.load_ecd(country="United States of America")
+    presidents = {"Barack Obama", "Ronald Reagan", "Richard Nixon",
+                  "Donald J. Trump (1st Term)", "Joseph R. Biden, Jr."}
+    assert df.filter(pl.col("type").is_in(list(presidents))).height == 0
 
 
 def test_repaired_release_still_warns_about_what_is_unfixed():
