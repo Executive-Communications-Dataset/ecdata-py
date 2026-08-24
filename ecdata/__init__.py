@@ -25,7 +25,7 @@ __all__ = [
 
 _manager = CountryManager()
 
-DEFAULT_ECD_VERSION = "1.0.3"
+DEFAULT_ECD_VERSION = "1.0.5"
 
 # The schema the dataset documents. Country assets do not all conform to it, so
 # `normalize_schema=True` projects whatever arrives onto this shape.
@@ -199,6 +199,37 @@ _KNOWN_DATA_ISSUES["1.0.3"] = {
     "chile": (
         "A few chile.parquet rows are credited to Gabriel Boric but dated before "
         "he took office in March 2022."
+    ),
+}
+
+# 1.0.4 corrected three mis-dated documents; 1.0.5 rebuilt the US `type` column
+# and settled Colombia's and Russia's provenance as documented rather than
+# defective. Both inherit 1.0.3's table with the entries that no longer apply
+# removed, and Colombia and Russia reworded: they describe how those corpora were
+# collected, not something wrong with them.
+_KNOWN_DATA_ISSUES["1.0.4"] = {
+    k: v for k, v in _KNOWN_DATA_ISSUES["1.0.3"].items()
+    if k not in ("brazil", "chile")
+}
+
+_KNOWN_DATA_ISSUES["1.0.5"] = {
+    "colombia": (
+        "colombia.parquet is transcripts of YouTube videos published by the "
+        "presidency, so url points at the video a transcript came from rather "
+        "than at a government page. That is the source, not a defect."
+    ),
+    "russia": (
+        "russia.parquet comes from a pre-existing dataset rather than a scrape "
+        "of kremlin.ru, so the fields a scrape would have filled are absent: url "
+        "and type are empty, and the text is the English-language edition."
+    ),
+    "venezuela": _KNOWN_DATA_ISSUES["1.0.1"]["venezuela"],
+    "ecuador": _KNOWN_DATA_ISSUES["1.0.1"]["ecuador"],
+    "dominican_republic": _KNOWN_DATA_ISSUES["1.0.1"]["dominican_republic"],
+    "united_states_of_america": (
+        "type in united_states_of_america.parquet was rebuilt from the source "
+        "url in 1.0.5. 17,243 rows had no reliable prefix and are null rather "
+        "than guessed at."
     ),
 }
 
