@@ -174,6 +174,33 @@ What `1.0.1` still gets wrong — overlapping executive terms, Colombia's YouTub
 provenance, Russia's English translations, `type` in the US file — needs the source
 data back, so `load_ecd` still warns for those assets.
 
+## Sentences instead of documents
+
+A row means different things in different countries: a whole document in Brazil,
+a paragraph in Spain, a sentence in Canada, an HTML block in Czechia. Counting
+rows across countries therefore measures the scraper as much as the executive.
+
+`unit='sentence'` loads a sentence-level view of the same release -- 9,207,251
+sentences against 2,891,622 rows:
+
+``` python
+ec.load_ecd(country='Chile')                      # 1,874 rows
+ec.load_ecd(country='Chile', unit='sentence')     # 16,787 sentences
+```
+
+It adds `document_id`, `block_index` and `sentence_index`, so a sentence can be
+put back in its document and the release's own grain is still visible, and
+`segmenter` recording which rules split each row. All four survive
+`normalize_schema`.
+
+Colombia is not segmented: its rows are auto-generated YouTube captions with no
+punctuation to split on, and come back whole with a warning. Czechia, Republic
+of Korea, Japan and Hong Kong are extracted block by block upstream, so many of
+their "sentences" are headings and captions.
+
+There is no pooled file for this view, so `unit='sentence'` with `full_ecd=True`
+raises rather than fetching a 404.
+
 ## Known data issues in release 1.0.0
 
 These are the defects in the original `1.0.0` assets. Most are fixed in `1.0.1`; the

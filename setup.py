@@ -15,7 +15,7 @@ REQUIREMENTS = [
 
 setup(
     name="ecdata",
-    version="1.3.0",
+    version="1.4.0",
     description=(
         "A pip installable package to distribute the "
         "Executive Communications Dataset"
