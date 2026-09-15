@@ -21,6 +21,7 @@ __all__ = [
     "lazy_load_ecd",
     "get_ecd_release",
     "CANONICAL_COLUMNS",
+    "SENTENCE_COLUMNS",
 ]
 
 _manager = CountryManager()
@@ -34,6 +35,24 @@ CANONICAL_COLUMNS: List[str] = [
     "language", "file", "isonumber", "gwc", "cowcodes", "polity_v",
     "polity_iv", "vdem", "year_of_statement", "office",
 ]
+
+# The sentence view adds these to the documented schema. They are kept through
+# normalisation rather than dropped with the scraper leftovers: without them a
+# sentence cannot be put back in its document, and `block_index` is the only
+# record of the release's own unit of observation.
+SENTENCE_COLUMNS: List[str] = [
+    "document_id", "block_index", "sentence_index", "segmenter",
+]
+
+
+def _release_tag(ecd_version: str, unit: str) -> str:
+    """The release holding a version at a given unit of observation.
+
+    The sentence view lives under its own tag, so publishing it never modifies
+    the release it was derived from.
+    """
+    return f"{ecd_version}-sentences" if unit == "sentence" else ecd_version
+
 
 # Columns that carry canonical data under a different name in some assets.
 # Verified against release 1.0.0: portugal.parquet has no `url` but its `urls`
@@ -269,7 +288,8 @@ def _warn_known_issues(urls: List[str], version: str) -> None:
                           UserWarning, stacklevel=3)
 
 
-def _warn_for_request(country, language, full_ecd, ecd_version) -> None:
+def _warn_for_request(country, language, full_ecd, ecd_version,
+                      unit="document") -> None:
     """Emit known-issue warnings for a request.
 
     Called from the public entry points rather than from _build, so that a
@@ -291,6 +311,17 @@ def _warn_for_request(country, language, full_ecd, ecd_version) -> None:
     except Exception:
         return          # invalid input is reported by validate_input
     _warn_known_issues(urls, ecd_version)
+
+    # The release's own caveats still apply to its sentence view; this is the
+    # one the view adds.
+    if unit == "sentence" and any(
+            u.rsplit("/", 1)[-1] == "colombia.parquet" for u in urls):
+        warnings.warn(
+            "[ecdata] colombia is not segmented in the sentence view: its rows "
+            "are auto-generated YouTube captions with no punctuation to split "
+            "on, so each row is returned whole. See the `segmenter` column.",
+            UserWarning, stacklevel=3,
+        )
 
 
 def _hashable(value):
@@ -321,25 +352,34 @@ def _normalize(frame, columns: List[str]):
         frame = frame.with_columns(
             [pl.lit(None).alias(c) for c in missing]
         )
-    return frame.select(CANONICAL_COLUMNS)
+    extra = [c for c in SENTENCE_COLUMNS if c in columns]
+    return frame.select(CANONICAL_COLUMNS + extra)
 
 
 def _build(country, language, full_ecd, ecd_version, normalize_schema,
-           deduplicate, lazy):
+           deduplicate, lazy, unit="document"):
+    if unit not in ("document", "sentence"):
+        raise ValueError("unit must be 'document' or 'sentence'")
     if not any([country, language, full_ecd]):
         raise ValueError(
             "Please provide a country name, language or set full_ecd to True"
         )
+    if unit == "sentence" and full_ecd:
+        raise ValueError(
+            "There is no pooled file for the sentence view. "
+            "Ask for countries or languages instead."
+        )
 
+    release = _release_tag(ecd_version, unit)
     reader = pl.scan_parquet if lazy else pl.read_parquet
 
     if full_ecd:
         url = (f"https://github.com/Executive-Communications-Dataset/ecdata"
-               f"/releases/download/{ecd_version}/full_ecd.parquet")
+               f"/releases/download/{release}/full_ecd.parquet")
         frame = reader(url)
     else:
         _manager.validate_input(country, language)
-        urls = _manager.build_urls(country, language, ecd_version)
+        urls = _manager.build_urls(country, language, release)
         if not urls:
             raise ValueError(
                 "No release files matched that country/language combination. "
@@ -367,16 +407,16 @@ def _build(country, language, full_ecd, ecd_version, normalize_schema,
 
 @cached(ttl=86400)
 def _load_ecd_cached(country, language, full_ecd, ecd_version,
-                     normalize_schema, deduplicate):
+                     normalize_schema, deduplicate, unit):
     return _build(country, language, full_ecd, ecd_version,
-                  normalize_schema, deduplicate, lazy=False)
+                  normalize_schema, deduplicate, lazy=False, unit=unit)
 
 
 @cached(ttl=86400)
 def _lazy_load_ecd_cached(country, language, full_ecd, ecd_version,
-                          normalize_schema, deduplicate):
+                          normalize_schema, deduplicate, unit):
     return _build(country, language, full_ecd, ecd_version,
-                  normalize_schema, deduplicate, lazy=True)
+                  normalize_schema, deduplicate, lazy=True, unit=unit)
 
 
 def load_ecd(country: Optional[CountryInput] = None,
@@ -384,6 +424,7 @@ def load_ecd(country: Optional[CountryInput] = None,
              full_ecd: bool = False,
              ecd_version: str = DEFAULT_ECD_VERSION,
              cache: bool = True,
+             unit: str = "document",
              normalize_schema: bool = True,
              deduplicate: bool = False) -> pl.DataFrame:
     """Load the Executive Communications Dataset.
@@ -396,6 +437,13 @@ def load_ecd(country: Optional[CountryInput] = None,
         ecd_version: Release tag to download.
         cache: Memoize the result for 24 hours. Set False to force a fresh
             download; previously this argument was accepted and ignored.
+        unit: "document", the default, is the release as published, where a
+            row is whatever the scraper produced for that country -- a whole
+            document, a paragraph, a sentence or an HTML block. "sentence"
+            loads the sentence-level view of the same release: one row per
+            sentence, with document_id, block_index and sentence_index added so
+            a sentence can be put back in its document. Colombia is not
+            segmented there; its rows carry no punctuation to split on.
         normalize_schema: Project the result onto CANONICAL_COLUMNS, filling
             absent columns with null and recovering columns that appear under a
             different name in some assets. Set False to see the raw columns.
@@ -408,11 +456,11 @@ def load_ecd(country: Optional[CountryInput] = None,
         pl.DataFrame
     """
     args = (_hashable(country), _hashable(language), full_ecd, ecd_version,
-            normalize_schema, deduplicate)
-    _warn_for_request(country, language, full_ecd, ecd_version)
+            normalize_schema, deduplicate, unit)
+    _warn_for_request(country, language, full_ecd, ecd_version, unit)
     if cache:
         return _load_ecd_cached(*args)
-    return _build(*args, lazy=False)
+    return _build(*args[:-1], lazy=False, unit=unit)
 
 
 def lazy_load_ecd(country: Optional[CountryInput] = None,
@@ -420,6 +468,7 @@ def lazy_load_ecd(country: Optional[CountryInput] = None,
                   full_ecd: bool = False,
                   ecd_version: str = DEFAULT_ECD_VERSION,
                   cache: bool = True,
+                  unit: str = "document",
                   normalize_schema: bool = True,
                   deduplicate: bool = False) -> pl.LazyFrame:
     """Lazily load the Executive Communications Dataset.
@@ -427,8 +476,8 @@ def lazy_load_ecd(country: Optional[CountryInput] = None,
     Takes the same arguments as load_ecd and returns a pl.LazyFrame.
     """
     args = (_hashable(country), _hashable(language), full_ecd, ecd_version,
-            normalize_schema, deduplicate)
-    _warn_for_request(country, language, full_ecd, ecd_version)
+            normalize_schema, deduplicate, unit)
+    _warn_for_request(country, language, full_ecd, ecd_version, unit)
     if cache:
         return _lazy_load_ecd_cached(*args)
-    return _build(*args, lazy=True)
+    return _build(*args[:-1], lazy=True, unit=unit)

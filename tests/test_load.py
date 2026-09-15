@@ -155,3 +155,56 @@ def test_known_issue_warns_again_on_cache_hit():
 
 def test_cache_false_still_returns_data():
     assert not ec.load_ecd(country="Costa Rica", cache=False).is_empty()
+
+
+# --- the sentence view --------------------------------------------------------
+
+def test_sentence_unit_returns_more_rows_than_documents():
+    docs = ec.load_ecd(country="Chile")
+    sents = ec.load_ecd(country="Chile", unit="sentence")
+    assert sents.height > docs.height
+    assert sents.height == 16787
+
+
+def test_sentence_view_keeps_its_identifiers_through_normalize():
+    """normalize_schema used to project onto CANONICAL_COLUMNS and would have
+    dropped these, leaving a sentence with no way back to its document."""
+    df = ec.load_ecd(country="Chile", unit="sentence", normalize_schema=True)
+    for column in ec.SENTENCE_COLUMNS:
+        assert column in df.columns, column
+    assert df.columns[:len(ec.CANONICAL_COLUMNS)] == ec.CANONICAL_COLUMNS
+
+
+def test_sentence_rows_join_back_to_their_document():
+    df = ec.load_ecd(country="Chile", unit="sentence")
+    assert df["document_id"].null_count() == 0
+    assert df["document_id"].n_unique() < df.height
+
+
+def test_unit_is_part_of_the_cache_key():
+    """Both views are memoized; without unit in the key the second call would
+    return the first one's frame."""
+    a = ec.load_ecd(country="Costa Rica")
+    b = ec.load_ecd(country="Costa Rica", unit="sentence")
+    assert a.height != b.height
+
+
+def test_sentence_view_has_no_pooled_file():
+    with pytest.raises(ValueError, match="pooled"):
+        ec.load_ecd(full_ecd=True, unit="sentence")
+
+
+def test_lazy_sentence_unit():
+    lf = ec.lazy_load_ecd(country="Costa Rica", unit="sentence")
+    assert isinstance(lf, pl.LazyFrame)
+    assert "sentence_index" in lf.collect_schema().names()
+
+
+def test_unsegmented_country_warns():
+    with pytest.warns(UserWarning, match="colombia is not segmented"):
+        ec.load_ecd(country="Colombia", unit="sentence")
+
+
+def test_rejects_an_unknown_unit():
+    with pytest.raises(ValueError, match="unit must be"):
+        ec.load_ecd(country="Costa Rica", unit="paragraph")
