@@ -26,7 +26,7 @@ __all__ = [
 
 _manager = CountryManager()
 
-DEFAULT_ECD_VERSION = "1.0.5"
+DEFAULT_ECD_VERSION = "1.0.7"
 
 # The schema the dataset documents. Country assets do not all conform to it, so
 # `normalize_schema=True` projects whatever arrives onto this shape.
@@ -252,6 +252,25 @@ _KNOWN_DATA_ISSUES["1.0.5"] = {
     ),
 }
 
+# 1.0.6 restored punctuation and capitalisation to Colombia, whose captions had
+# none; 1.0.7 refined which phrases a mark may not split. Nothing else changed,
+# so every other caveat carries over.
+_KNOWN_DATA_ISSUES["1.0.6"] = {
+    **_KNOWN_DATA_ISSUES["1.0.5"],
+    "colombia": (
+        "colombia.parquet is auto-generated captions of YouTube videos "
+        "published by the presidency, which carry no punctuation. From 1.0.6 "
+        "it is restored by a model: the words are the captions' own, the "
+        "punctuation and capitals are not. Few questions are marked -- about "
+        "one in five."
+    ),
+}
+_KNOWN_DATA_ISSUES["1.0.7"] = dict(_KNOWN_DATA_ISSUES["1.0.6"])
+
+# Sentence views in which Colombia is returned whole, because the release they
+# were derived from had no punctuation in it to split on.
+_UNSEGMENTED_COLOMBIA = {"1.0.5"}
+
 # Releases whose full_ecd.parquet does not reconcile against the country assets.
 # 1.0.1 rebuilt it from them, so it is absent here and no warning fires.
 _FULL_ECD_ISSUES: Dict[str, str] = {
@@ -314,7 +333,7 @@ def _warn_for_request(country, language, full_ecd, ecd_version,
 
     # The release's own caveats still apply to its sentence view; this is the
     # one the view adds.
-    if unit == "sentence" and any(
+    if unit == "sentence" and ecd_version in _UNSEGMENTED_COLOMBIA and any(
             u.rsplit("/", 1)[-1] == "colombia.parquet" for u in urls):
         warnings.warn(
             "[ecdata] colombia is not segmented in the sentence view: its rows "
@@ -442,8 +461,10 @@ def load_ecd(country: Optional[CountryInput] = None,
             document, a paragraph, a sentence or an HTML block. "sentence"
             loads the sentence-level view of the same release: one row per
             sentence, with document_id, block_index and sentence_index added so
-            a sentence can be put back in its document. Colombia is not
-            segmented there; its rows carry no punctuation to split on.
+            a sentence can be put back in its document. Colombia's YouTube
+            captions carry no punctuation of their own; from 1.0.6 they are
+            segmented on punctuation restored by a model, and in 1.0.5 they
+            are returned whole.
         normalize_schema: Project the result onto CANONICAL_COLUMNS, filling
             absent columns with null and recovering columns that appear under a
             different name in some assets. Set False to see the raw columns.
