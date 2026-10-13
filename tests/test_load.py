@@ -70,7 +70,7 @@ def test_deduplicate_reduces_rows():
 # --- 1.0.1, the repair release ------------------------------------------------
 
 def test_default_version_is_the_repaired_release():
-    assert ec.DEFAULT_ECD_VERSION == "1.0.5"
+    assert ec.DEFAULT_ECD_VERSION == "1.0.7"
 
 
 def test_language_is_populated_everywhere():
@@ -201,8 +201,26 @@ def test_lazy_sentence_unit():
 
 
 def test_unsegmented_country_warns():
+    """1.0.5's Colombia captions had no punctuation, so its sentence view is whole."""
     with pytest.warns(UserWarning, match="colombia is not segmented"):
-        ec.load_ecd(country="Colombia", unit="sentence")
+        ec.load_ecd(country="Colombia", unit="sentence", ecd_version="1.0.5")
+
+
+def test_colombia_is_punctuated():
+    """1.0.6 restored punctuation to Colombia's YouTube captions."""
+    with pytest.warns(UserWarning, match="restored by a model"):
+        df = ec.load_ecd(country="Colombia")
+    assert df.height == 2018
+    assert df["text"].str.contains(r"[.?] [A-ZÁÉÍÓÚÑ¿]").all()
+
+
+def test_colombia_is_segmented_once_punctuated():
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        df = ec.load_ecd(country="Colombia", unit="sentence")
+    assert not any("not segmented" in str(w.message) for w in caught)
+    assert df.height > 100_000          # 2,018 rows, each a whole speech
+    assert df["segmenter"].unique().to_list() == ["pysbd/es on restored punctuation"]
 
 
 def test_rejects_an_unknown_unit():

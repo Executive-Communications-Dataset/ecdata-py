@@ -193,8 +193,10 @@ put back in its document and the release's own grain is still visible, and
 `segmenter` recording which rules split each row. All four survive
 `normalize_schema`.
 
-Colombia is not segmented: its rows are auto-generated YouTube captions with no
-punctuation to split on, and come back whole with a warning. Czechia, Republic
+Colombia's rows are auto-generated YouTube captions, which carry no punctuation
+of their own. From `1.0.6` they carry punctuation restored by a model and are
+segmented on it, with `segmenter` saying so; in `1.0.5` they come back whole
+with a warning. Czechia, Republic
 of Korea, Japan and Hong Kong are extracted block by block upstream, so many of
 their "sentences" are headings and captions.
 
@@ -217,7 +219,7 @@ of it.
 | Text mis-decoded (UTF-8 read as latin-1) | Venezuela | none |
 | Every `url` has the host doubled | Jamaica | none |
 | `url` is 100% null, and the text is the English kremlin.ru edition rather than the Russian original | Russia | none |
-| Every `url` is a YouTube link rather than an official record | Colombia | none |
+| Every `url` is a YouTube link rather than an official record, and the captions had no punctuation: from `1.0.6` it is a model's | Colombia | none |
 | `executive` splits Biden across two spellings, dates the Obama/Trump handover to 2016, and runs Ford to 1996; `type` holds president names; `language` is null | USA | none |
 | Rows are paragraph-level in some countries and document-level in others | varies | check `text` length before comparing counts |
 
