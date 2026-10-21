@@ -70,7 +70,7 @@ def test_deduplicate_reduces_rows():
 # --- 1.0.1, the repair release ------------------------------------------------
 
 def test_default_version_is_the_repaired_release():
-    assert ec.DEFAULT_ECD_VERSION == "1.0.7"
+    assert ec.DEFAULT_ECD_VERSION == "1.0.8"
 
 
 def test_language_is_populated_everywhere():
@@ -221,6 +221,17 @@ def test_colombia_is_segmented_once_punctuated():
     assert not any("not segmented" in str(w.message) for w in caught)
     assert df.height > 100_000          # 2,018 rows, each a whole speech
     assert df["segmenter"].unique().to_list() == ["pysbd/es on restored punctuation"]
+
+
+def test_brazil_is_rebuilt():
+    """1.0.8 rebuilt Brazil: eight presidents since 1985, every row attributed."""
+    with pytest.warns(UserWarning, match="rebuilt in 1.0.8"):
+        df = ec.load_ecd(country="Brazil")
+    assert df["executive"].null_count() == 0
+    assert sorted(df["executive"].unique().to_list()) == [
+        "Dilma Rousseff", "Fernando Collor", "Fernando Henrique Cardoso",
+        "Itamar Franco", "Jair Bolsonaro", "José Sarney",
+        "Luiz Inácio Lula da Silva", "Michel Temer"]
 
 
 def test_rejects_an_unknown_unit():

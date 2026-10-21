@@ -26,7 +26,7 @@ __all__ = [
 
 _manager = CountryManager()
 
-DEFAULT_ECD_VERSION = "1.0.7"
+DEFAULT_ECD_VERSION = "1.0.8"
 
 # The schema the dataset documents. Country assets do not all conform to it, so
 # `normalize_schema=True` projects whatever arrives onto this shape.
@@ -266,6 +266,20 @@ _KNOWN_DATA_ISSUES["1.0.6"] = {
     ),
 }
 _KNOWN_DATA_ISSUES["1.0.7"] = dict(_KNOWN_DATA_ISSUES["1.0.6"])
+
+# 1.0.8 rebuilt Brazil from web archives of the presidency's library. Every row
+# now has an executive, so it warns about coverage rather than attribution.
+_KNOWN_DATA_ISSUES["1.0.8"] = {
+    **_KNOWN_DATA_ISSUES["1.0.7"],
+    "brazil": (
+        "brazil.parquet was rebuilt in 1.0.8 from web archives of the "
+        "presidency's library, which was offline at the time. 1991 to 2002 is "
+        "still thin -- Itamar Franco has 8 documents and Fernando Henrique "
+        "Cardoso 102 -- because the archives hold few readable copies of them. "
+        "12 rows are annual Messages to Congress, government reports of up to "
+        "several hundred pages: filter on type before counting words."
+    ),
+}
 
 # Sentence views in which Colombia is returned whole, because the release they
 # were derived from had no punctuation in it to split on.
