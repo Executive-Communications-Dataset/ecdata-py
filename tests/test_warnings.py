@@ -76,3 +76,16 @@ def test_a_later_release_carries_no_warnings():
         warnings.simplefilter("always")
         ec._warn_for_request("Jamaica", None, False, "2.0.0")
     assert [str(w.message) for w in caught] == []
+
+
+def test_rebuilt_brazil_warns_about_coverage():
+    """1.0.8 rebuilt Brazil: every row has an executive, but 1991-2002 is thin."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        ec._warn_for_request("Brazil", None, False, "1.0.8")
+    messages = [str(w.message) for w in caught]
+    assert len(messages) == 1 and "Fernando Henrique Cardoso" in messages[0], messages
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        ec._warn_for_request("Brazil", None, False, "1.0.7")
+    assert [str(w.message) for w in caught] == []
